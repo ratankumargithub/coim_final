@@ -1,0 +1,1579 @@
+Spring Web MVC:-
+================
+
+
+what is mvc and mvc2 and what r the rules of mvc-2 design patter,what is a frontcontroller already we disscussed at the time of servlet and jsp reffer jeefw_final notes last part.
+
+
+--by manual approach we can use this pattern but we have to write this frontcontroller class, handlermapping,and abstract controllers,and lots of configuration.
+
+-so,there r lots of readymade f/ws r available in the market to implement MVC2 pattern based web-application.
+
+those are:-
+
+
+Struts from apache foundation
+
+JSF from Sun/Oracle 
+
+Spring-MVC from interface21.
+
+
+
+Spring-web-mvc:-
+--------------
+
+--this f/w is given to implement MVC2 design pattern based web-application in simplified way.
+
+
+Note:- In Spring-MVC DispatcherServlet(predefined servlet class given by spring-mvc f/w) is acting as a front-controller servlet,and we need to cgf this class in web.xml file with either directory match or extension match url pattern. 
+
+
+--DS traps the all client request for an application and manges the flow control for a request.
+
+
+
+Spring-MVC web-application flow:-
+
+
+reffer spring_mvc.jpg
+
+
+
+w.r.d :-
+
+1.browser gives req to the web-application
+
+2.As front-controller DS traps and takes the req.
+
+ 
+3.DS uses HandlerMapping component to decide the Handler class(helper controller) to process the request for appropriate request uri.in other word,DS using HandlerMapping bean(predefind bean of spring-mvc f/w) to identify the appropriate controller class method for that use-case.
+
+
+4.DS passes the control to the handler/controller class.this class should be annotaed with 
+@Controller annotation.
+
+
+
+5.handler/controller class should have the request processing methods for request uri.
+that method should be annotated with @RequestMapping("request uri") 
+
+
+6.handler/controller class appropriate uri annotated method will process the req .
+
+
+7.controller method calls the Service class b.method to process that req.
+
+
+8.controller class method returns the process data and view logical name in ModelAndView obj to the DS. 
+
+
+note:- OO representation of processed data and the logical name to the physical view is nothing but ModelAndView obj.
+
+
+8.DS uses the ViewResolver bean component to get the View obj having view layer technology and resource name. and keep the model data in request scope.
+
+
+9.ViewResolver returns the View obj to the DS.this View obj wraps the view layer technology and resource name.
+
+10.DS uses the View obj and render the control to the view resource. and include the view resource
+
+11.DS return the response to the client.
+
+
+
+
+
+Note:- request handling method of Controller class is a very flexibale method,that means 
+
+1.we can give any name for that method,
+
+2.any number of parameter based on our requrement.
+
+3.and for this method we can speicfy any of the following return type.
+
+
+
+
+possible parameter:-
+===================
+
+
+1.any type of primitive and class.
+
+2.Hreq,Hres,HttpSession
+
+3.Map(I),Model(I),ModelMap(c) :- to put the processed data with a logical name.
+
+4.form bean class
+
+5.BindingResult/Errors
+
+	
+Model:-it is the child interface of Map.
+
+
+ModelMap :- ModelMap is an implementation class of Model interface. 
+ModelMap has some extra methods as well,like to merge other map obj.or addAttribute(--);
+
+
+	Map(I)
+ 	 |
+       Model(I)---with some extra methods like(addAttribute,mergeAttributes)
+	 |
+     ModelMap(C)
+
+
+--internally Spring container will create ModelMap obj(in all the 3 cases Map,Model,ModelMap) to keep the value.
+
+
+ex:-
+
+modelMap.mergeAttributes(Map<String,?> map);
+
+
+possible return type:-
+---------------------
+
+1.void 
+
+
+--here we can mannually implementing request processing logic and response generation login by using HReq and HRes obj as parameter 
+
+or 
+
+by default the DS takes the request uri(virtual path) of current req and translates it into logical view name by trimming slash and extension
+
+
+2.String (returning only view logical name).
+
+
+3.ModelAndView obj( both model data and view logical name, any single one also)
+
+
+
+******String and ModelAndView is most requently return type.
+
+
+
+we create ModelAndView obj by following various way:-
+
+
+ModelAndView obj can be created by calling one of the following constructor:-
+
+
+ModelAndView(String viewName);  
+
+ModelAndView(String viewName,String key,Object value);
+
+ModelAndView(String viewName,Map<String,?> modelData);//here key and value will be in Map format.
+
+
+etc
+
+
+
+Note:- processed data either we can put in Hreq or HttpSession obj manually by taking them as method parameter with a logical name.
+
+or we can put in in Map/Model/ModelMap obj by taking them as parameter
+
+or inside ModelAndView obj by creating this obj inside request method mannually.
+
+
+except data kept in session obj,remaining all the data will be kept in request scope.
+
+
+
+
+
+
+Note:- since DS will act as a frontcontroller,this class uses some predefined Spring bean classes like 
+
+1.HandlerMapping class to map the req to the appropriate req handler method of controller class.
+
+2.ViewResolver class to resolve the physical view component by using logical view name returned from req handler method of controller class.
+
+3.some other classes..
+
+
+so inorder to get the obj of these classes DS internally creates a spring container of type "WebApplicationContext" by loading the springconfiguration file inside init() method of DS class.
+
+so this container should be ready before any client req comes to the DS,for that we need to preinstatiate the DS by using load-on-startup. 
+
+
+and we need to supply the name and locaiton of the springconfiguration file to the DS by using <init-param> tag.
+
+--generally we keep this spring-cfg file inside WEB-INF folder.
+
+
+ex:-
+
+
+
+<web-app>
+
+	<servlet>
+		<serlvet-name>myDS</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+	
+	<init-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/applicationContext.xml</param-value>
+	</init-param>
+
+		<load-on-startup>1</load-on-startup>
+
+	</servlet>
+
+	<servlet-mapping>
+		<serlvet-name>myDS</servlet-name>
+		<url-pattern>*.form</url-pattern>		
+	</servlet-mapping>
+
+</web-app>
+
+
+
+
+
+Note:- if we follow naming rule for spring cfg file as <servlet-name>-servlet.xml and it is kept under WEB-INF folder then it is optional to cfg <init-param> tag in web.xml file.
+
+ex:-
+
+myDS-servlet.xml
+
+
+
+RequestMappingHandlerMapping
+-----------------------------------
+--it is a predefined spring bean class.
+
+--this hanlder mapping class reads url pattern of request,removes the extension and then checks wheather remaining value of url pattern is matching with value of @RequestMapping annotation(applied on method) of @Controller annotated controller class or not. 
+--if matched then returns the obj of controller class which is annotated with @Controller and instruct the DS to execute that method. 
+
+
+ex:-
+
+if DS is cfg with *.form url pattern
+
+
+jsp page(submit)--------->/welcome.form--------->DS------------>RMHM
+
+
+in myDS-servlet.xml file
+
+
+@Controller
+public class myController
+{
+
+@RequestMapping(value="/welcome") here "/" is optional and we can write value="welcome.form" also
+public MAV m1(){
+--
+--
+}
+
+}
+
+
+****************************no need to explain************
+
+Note:- from spring 4.x the DefaultAnnotationHandlerMapping is deprecated and DS 
+and in Spring 5 it uses RequestMappingHandlerMapping bean to map the client request.
+
+
+the other handlerMapping beans are usind in creating a controller class without using annoations (i.e by implementing AbstractController interface.):-
+
+BeanNameUrlHandlerMapping
+
+SimpleUrlHandlerMapping
+
+UrlFilenameViewController
+
+ParameterizableViewController
+
+
+*********************************************
+
+
+
+ViewResolver:-
+==============
+
+
+
+--ViewResolver maps the view name to the actual view page.
+
+--org.springframework.web.servlet.ViewResolver is an interface with one abstract method:-
+
+public View resolveViewName(String viewName, java.util.Locale locale)
+
+
+--spring-mvc f/w provides multiple built-in ViewResolver implementation classes in that "InternalResourceViewResolver" is mostly used viewresolver class. 
+
+
+--InternalResourceViewResolver takes the logical view name given by controller class in ModelAndView obj and resolve physical view name by adding prefixes and suffixes and returns View(I) interface implementation class obj back to DS having physical view name.
+
+
+--we must cfg this ViewResolver class in ds-servlet.xml file
+
+ex:-
+
+
+	<bean id="vr"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/pages/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+
+--here pages is a normal folder in WEB-INF folder where we keep out jsp pages that should be mapped with view logical view name.
+
+
+
+
+--DS calls ViewResolver class resolveViewName(--) method by supplying view name returned by Controller bean in ModelAndView obj and gets the View(I) implemented class obj.
+
+ 
+--when Controller bean returns ModelAndView obj with logical view name and model data ,DS reads the model data and stores it in 'ModelMap' obj and after that DS calls resolveViewName(--) method of ViewResolver class by supplying logical view name.
+
+
+--now DS calls render() method of View(I) object.this render() method stores/adds the data of ModelMap obj to the request scope and then includes a jsp(response page).
+
+
+--finally DS will sends the response to the client. 
+
+
+first Spring-mvc annotation based application with spring configuration file:=
+==============================================================================
+
+
+--we can create spring-web-mvc appl by various way:- 
+
+1.download the spring5 related s/w and add all the jar files is the lib folder of our dynamic-webapplication..(add all the spring s/w related jar file using userlibrary of of our dynamic-web project).
+
+
+2.create a maven project and choose the jee arctype and add the spring5 web_mvc dependency in pom.xml
+
+3.create a dynamic web_application and convert it into maven project and add the spring_mvc dependency in pom.xml file.
+
+4.by using spring boot.
+
+
+
+
+in maven normal way:-
+===================
+
+
+Step 1 :- create a dynamic webapplication and the spring capabilites.
+
+start eclipse
+
+- click on window--prefrences---maven(expand it)----archetypes---add Remote catelog---enter catelog file as 'http://repo.maven.apache.org/maven2' ---description--'maven central'---ok
+
+- click on file---new--maven project---next---select catalog as(wait for some time to load):maven central --->select artifact type=webapp-jee5 --->next---groupId---com.ratan.spring--->artifactId:'welcomeMVC' --->package:com.ratan.spring.pack1---finish
+
+--don't use jee6 or jee7 otherwise webapp folder will not come.
+
+
+
+best way :- create a dynamic web-project and convert it as maven project
+
+then add the spring-web-mvc5 related dependency in POM.xml
+
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>5.1.8.RELEASE</version>
+</dependency>
+
+
+
+
+step 2:- inside web.xml file register spring-mvc f/w supplied DispatcherServlet class with 
+<load-on-startup> and give a url pattern as directory or extenstion match to configure it as a FC.
+
+web.xml:-
+--------
+
+<web-app>
+
+	<servlet>
+
+		<servlet-name>ds</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>ds</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+
+
+
+</web-app>
+
+
+
+step 3:- create a spring-cfg file under WEB-INF folder by name ds-servlet.xml.
+
+incase othername or in otherlocation,we need to supply that file to the DS by using <init-param> tag.
+
+--rightclick on the WEB-INF folder --->new--->other---search for spring configuration file.
+
+Note:- with above step the basic name-space xml file will come,if we want to create it manually then 
+take the namespace from either from google reffernce app or from spring sw/
+spring5\spring-framework-5.1.8.RELEASE\docs\spring-framework-reference\core.html file.
+
+
+
+
+step 4:-
+
+
+cfg the InternalResourceViewResolver class with prefix and suffix property in spring cfg file:-
+
+ex:-
+
+
+
+	<bean id="vr"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/pages/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+
+
+step 5:- to register the controller class with spring container(annotation based)
+
+use the <context:component-scan> tag, for that import the namespace of the context and specify the base package name:- 
+
+ex:-
+
+<context:component-scan base-package="com.ratan"/>
+
+
+step 6:- 
+
+
+create a controller class and annotate with @Controller,and in this class write req handling methods 
+those methods should be annotated with @RequestMapping annotation with client request uri.
+
+
+step 7:- write all jsp pages inside WEB-INF/pages folder.
+
+
+
+web.xml:-
+---------
+
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+	version="3.1">
+	<display-name>springmvcdemo1</display-name>
+
+	<servlet>
+
+		<servlet-name>ds</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>ds</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+
+
+</web-app>
+
+
+
+ds-servlet.xml(inside WEB-INF folder)
+--------------------------------------
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+		xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+<bean id="vr"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/pages/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+<context:component-scan base-package="com.ratan"/>
+
+
+
+</beans>
+
+
+
+MyController.java:-
+------------------
+
+package com.ratan;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+
+@Controller
+public class MyController {
+
+	
+	@RequestMapping("/")
+	public String homeRequest(){
+		
+		return "home";
+		
+	}	
+}
+
+
+home.jsp:-(under pages folder of WEB-INF folder)
+----------
+
+<body bgcolor="pink">
+
+<h1>Welcome to Spring MVC</h1>
+
+</body>
+
+
+
+
+Note:- maven directory in eclipse may uses diff directory structure,but if we export the war file,it will be the same .war structure given by sun.
+
+
+
+
+
+
+
+Above Spring-mvc annotation based application without using web.xml and spring-cfg file 
+========================================================================================
+
+if we don't use web.xml file,then we need to Register DS by using Dynamic Servlet Registration by using ServletContainerInitializer interface.
+
+but spring f/w internally uses a class called SpringServletContainerInitializer which is a implementation class of ServletContainerInitializer,and this class is already added in the jar file which searches for a class which is implementing WebApplicationInitializer interface.and calls the onStartup(-) method on that obj.
+
+so here we no need to create a jar file and add it to the lib folder.
+
+
+
+
+Note:- for web.xml based springMVC application DS creates "WebApplicationContext" container inside init() method by loading ds-servlet.xml (spring-cfg) file and register that container with it .
+
+
+but while using spring-mvc webapplication without web.xml file,ie. by using WebapplicationInitializer
+DS uses "AnnotationConfigWebApplicationContext" container.
+
+so we need to create this container obj manually and with this container we need to register spring-config class (@Configguation annotated class).
+
+and then this container need to supply DS class constructor.
+
+
+ 
+ex:-
+
+
+
+
+from the above application delete the web.xml and ds-servlet.xml file.
+
+
+add the following two cfg classes in the project:-
+
+
+
+1.SpringAppConfig.java:-
+
+2.MyDSInitializer.java
+
+
+
+
+SpringAppConfig.java:-
+----------------------
+
+package com.ratan.cfgs;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.view.InternalResourceViewResolver;
+
+
+@EnableWebMvc// to enable annotation-dirven application
+@Configuration
+@ComponentScan("com.ratan")
+public class SpringAppConfig {
+
+	@Bean   //here method name can be anything,this class will be register by using ByType
+	public ViewResolver createViewResolver(){
+		
+		InternalResourceViewResolver irv=new InternalResourceViewResolver();
+		
+		irv.setPrefix("/WEB-INF/pages/");
+		irv.setSuffix(".jsp");
+		
+		return irv;
+	
+	}	
+}
+
+
+
+
+MyDSInitializer.java:-
+-----------------------
+
+
+package com.ratan.cfgs;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRegistration;
+
+import org.springframework.web.WebApplicationInitializer;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.DispatcherServlet;
+
+public class MyDSInitializer implements WebApplicationInitializer {
+
+	@Override
+	public void onStartup(ServletContext ctx) throws ServletException {
+		
+		
+		AnnotationConfigWebApplicationContext ac=new AnnotationConfigWebApplicationContext();
+
+		ac.register(SpringAppConfig.class);
+		
+		
+		DispatcherServlet ds=new DispatcherServlet(ac);
+		
+		ServletRegistration.Dynamic register=ctx.addServlet("myds", ds);
+		
+		register.setLoadOnStartup(1);
+		register.addMapping("/");
+		
+		
+		
+	}
+}
+
+
+
+
+
+
+handling client data in controller class request handling methods:-
+===================================================================
+
+
+--if we don't pass any httpmethod name to the request handler method then it will autodetect GET or POST.
+
+--but if we want to define a method to only work for specific GET or POST method then we can define by as follows:-
+
+	@RequestMapping(value="studentregisterctr",method=RequestMethod.GET)
+	public ModelAndView registerStudent(){
+	
+	
+	}
+
+
+or we can use 
+
+
+	@GetMapping("studentregisterctr")
+	public ModelAndView registerStudent(){
+	
+	
+	}
+
+
+simmilar way we have 
+
+@PostMapping
+@PutMapping
+--
+--
+
+
+
+1.we can take parameter in the method as same as request parameter is comming,and if method parameter name and request parameter name is same then that value will be injected in those parameter variables.
+
+
+ex:-
+
+
+if form page:-
+-------------
+
+<form action="studentregisterctr" method="post">
+
+Enter Roll :<input type="text" name="roll"><br><br>
+Enter Name :<input type="text" name="name"><br><br>
+Enter Marks :<input type="text" name="marks"><br><br>
+
+<input type="submit" value="Register">
+
+
+then in conroller class:-
+------------------------
+
+	@RequestMapping(value="studentregisterctr")
+	public ModelAndView registerStudent(String name,int roll,int marks){
+	
+		ModelAndView mv=new ModelAndView();
+		mv.setViewName("result");
+		
+		mv.addObject("nm", name);
+		mv.addObject("rl", roll);
+		mv.addObject("mr", marks);
+		
+		return mv;
+		
+	}
+
+
+
+2.
+@RequestParam
+
+if the method parameter name and request parameter names r diff the use @RequestParam annotation
+
+ex:-
+
+
+	@RequestMapping(value="studentregisterctr")
+	public ModelAndView registerStudent(@RequestParam("name")String n,int roll,int marks){
+	
+		
+		
+		ModelAndView mv=new ModelAndView();
+		mv.setViewName("result");
+		
+		mv.addObject("nm", n);
+		mv.addObject("mr", marks);
+		mv.addObject("rl", roll);
+		return mv;
+		
+	}
+
+
+	
+3.if request method parameter is a bean class obj,and that bean field names and request parameter names r same then that obj will automatically injected...
+
+	
+ex:-
+
+
+
+	@RequestMapping(value="studentregisterctr")
+	public ModelAndView registerStudent(Student student){
+	
+		
+		
+		ModelAndView mv=new ModelAndView();
+		mv.setViewName("result");
+		
+		mv.addObject("nm", student.getRoll());
+		mv.addObject("mr", student.getName());
+		mv.addObject("rl", student.getMarks());
+		return mv;
+		
+	}
+
+
+
+4.@PathParam
+
+from the browser if we send the data without logical name with the help of  uri then it is called pathvariable,ex:- http:...appl/a1/10
+
+there is no any way to access this type of varaible in a Servlet application
+
+but throgh the restfull webservices and spring-mvc we can inject that variable to the request handling method parameter variable by using @PathVariable
+
+
+ex:-
+
+in home.jsp:-
+------------
+
+
+<a href="a1/10">click</a>
+
+
+in controller class :-
+-------------------
+	
+	@RequestMapping("a1/{id}")
+	public void fun1(@PathVariable("id")int x){
+		System.out.println("value is "+x);
+	}
+
+
+
+
+
+
+student register application:- using Spring mvc:-
+-------------------------------------------------
+
+by using DAO pattern only one registraion method dummy example..
+
+
+
+
+
+**********************no need to take*******************
+
+
+
+
+
+
+
+Spring-mvc form validation:-
+----------------------------
+
+
+@ModelAttribute:- this attribute can be applied to a method level or in side a method parameter.
+
+
+method level:-
+-------------
+
+@ModelAttribute
+public void addAttributes(Model model) {
+    model.addAttribute("msg", "Welcome to the Netherlands!");
+}
+
+
+
+here msg="welcome to.." is added in all the models defined in the controller class.
+
+
+parameter level:-
+----------------
+
+@RequestMapping(value = "/addEmployee")
+public String submit(@ModelAttribute("employee") Employee employee) {
+    // Code that uses the employee object
+ 
+} 
+
+here parameter employee obj will be populated from model obj,whose name is "employee".
+
+
+Form page validation:-
+======================
+
+--we need to validate a form in JS as well as in server side programming, when a valid value will come form the client,then only SL method should be called by the controller.
+
+
+--to use the annotation based validation in spring-mvc we the annotations of "Bean validation API" and the annotations of "Hibernate validator api" to perform validations on the i/p values.
+
+--"Hibernate validator api" is reference implementation of bean validaiton api.
+
+
+--to use "Hibernate validator api" add the following dependencies in POM.xml:-
+
+
+
+
+<dependency>
+
+<gid>org.hibernate</gid>
+<aid>hibernate-validator</aid>
+<v>5.1.0.FINAL</v>
+
+</dependency>
+
+
+
+
+
+
+
+--the following r the list of annotations of "Bean validation api":-
+
+
+1.@AssertTrue:- 
+--------------
+
+--the value of boolean field must be true.
+
+ex:-
+
+
+@AssertTrue
+private boolean married;
+
+
+
+2.AssertFalse:-
+---------------
+
+--the value of boolean field must be false.
+
+ex:-
+
+@AssertFalse
+private boolean married;
+
+
+
+
+3.@DecimalMax:- 
+----------------
+
+--the value of double field must be less that or equal to given value.
+
+ex:-
+
+
+@DecimalMax("30.15")
+private double price;
+
+
+
+
+4.DecimalMin:-
+--------------
+
+--the value of double field must be greater than or equal to given value.
+
+ex:-
+
+@DecimalMin("12.15")
+private double price;
+
+
+
+5.@Min:-
+---------
+
+--the value of interger type must be >= given type.
+
+ex:-
+
+@Min(18)
+private int age;
+
+
+
+6.@Max:-
+--------
+
+--the value of interger type must be <= given type.
+
+ex:-
+
+@Max(18)
+private int age;
+
+
+
+7.@NotNull:-
+------------
+
+--the value of the field must not be null.
+
+ex:-
+
+
+@NotNull
+private String name;
+
+
+
+8.@Null:-
+--------
+
+--the value of the field must be null.
+
+
+9.@Size:-
+---------
+
+
+--the length of a String must be within given range.
+
+ex:-
+
+
+@Size(min=5,max=8)
+private String password;
+
+
+10.@Pattern:-
+-------------
+
+--the value of the field must match the given expression.
+
+ex:-
+
+
+@Pattern(regexp="^[A-Z][A-Z]*")
+private String username;
+
+
+11.@Past:-
+----------
+
+--the value of the Date field should be a past date.
+
+ex:-
+
+@Past
+private Date dob;
+
+
+12.@Future:-
+-----------
+
+--the value of the Date field should be a future date.
+
+ex:-
+
+@Future
+private Date expDate;
+
+
+13.@DateTimeFormat:-
+--------------------
+
+--the value of Date field must be in a given format.
+
+@DateTimeFormat(pattern="dd-MM-yyyy")
+private Date joinDate;
+
+
+
+--List of "Hibernate validator Api" annotaions:-
+------------------------------------------------
+
+
+@CreditCardNumber
+
+@Email
+
+@NotEmpty
+
+@NotBlank
+
+@Range
+
+
+
+
+--diff bt @NotNull,@NotEmpty and @NotBlank:-
+--------------------------------------------
+
+--@NotEmpty and @NotBlank checks for the not null also.
+
+--@NotBlank validates to true,if the size of String should be greater than zero after trimming.
+
+
+ex1:-
+
+String str=null;
+
+@NotNull---false
+@NotEmpty--false
+@NotBlank--false
+
+
+
+ex2:-
+
+String str="";
+
+@NotNull---true
+@NotEmpty--false
+@NotBlank--false
+
+
+ex3:-
+
+String str="   ";
+
+@NotNull---true
+@NotEmpty--true
+@NotBlank--false
+
+
+ex4:-
+
+String str="hello";
+
+@NotNull---true
+@NotEmpty--true
+@NotBlank--true
+
+
+
+defining error msg:-
+--------------------
+
+--while validating the i/p fields,if any validation on a field is failed then we must show an error msg to the user on browser.
+
+
+--we can define error msg using 'message' element of thses validator annotaitons.
+
+
+ex:-
+
+@Size(min=4,max=8,message="User name must be >=4 and <=8")
+private String uname;
+
+
+@NotEmpty(message="Password is mandatory")
+private String pwd;
+
+
+
+
+
+
+
+
+to perform the validation on the form feild on spring-mvc:-
+===========================================================
+
+--when we gives the req to the form page first time,that time only we need to tell the form page,to bind the bean class obj with the form fileds,so while rendering the first req to the form page we send also bean obj putting that in Model obj
+
+
+ex:-
+
+	@RequestMapping(value="studentregister",method=RequestMethod.GET)
+	public String registerStudentform(Model m){
+			Student student=new Student();
+			m.addAttribute("student", student);
+		return "regStudent"; 
+	}
+ 
+
+--here Student bean class obj is binded with model attribute with name "student" with initial value.
+
+
+--now in order to bind this bean obj with form page and also to display the validation fails errors in the same page we need to devlop form page by using spring mvc supplied form tags:-
+
+in order to use these tags we need to import it by using jsp taglib directive :-
+
+
+ex:-
+
+
+<body>
+<h1>Student Registration Screen</h1>
+
+    <%@ taglib prefix="f" uri="http://www.springframework.org/tags/form" %>
+
+<f:form action="studentregisterctr" method="post" modelAttribute="student" >
+
+
+Enter Roll :<f:input path="roll"/> <f:errors path="roll"/> <br><br>
+Enter Name :<f:input path="name"/> <f:errors path="name"/><br><br>
+Enter Marks :<f:input path="marks" /><f:errors path="marks"/><br><br>
+
+<input type="submit" value="Register">
+
+</f:form>
+
+</body>
+
+
+
+
+--to handle this form page,we need to write following requset handling method:-
+
+
+	@RequestMapping(value="studentregisterctr",method=RequestMethod.POST)
+	public ModelAndView registerStudent(@Valid Student student,BindingResult be){
+		
+		System.out.println(be.hasErrors()+"===================");
+		if(be.hasErrors()){
+			
+			List l=be.getFieldErrors();
+			
+			System.out.println(l);
+			
+			return new ModelAndView("regStudent");
+		}
+		else{
+			
+		ModelAndView mv=new ModelAndView();
+		mv.setViewName("result");
+		
+		String s=dao.registerStudent(student);
+		
+		mv.addObject("nm", student.getName());
+		mv.addObject("mr", student.getRoll());
+		mv.addObject("rl", student.getMarks());
+		mv.addObject("msg",s);
+		
+		return mv;
+		}
+	}
+
+
+
+--in the above method,we used @Valid annotation to the bean class to just validate the form feild,if any validation fails then it will be binded to the BindingResult obj by the f/w.
+
+
+
+
+
+
+Spring Boot:-
+=============
+
+--the current version of spring boot is 2.2.2   
+  
+---spring boot is spring platform that mainly focus on convention over the configuration.
+
+--spring boot is not a f/w sw is a just a spring application development platform which provides RAD (Rapid Application Development) feature to Spring framework.
+
+--with the spring boot we can simply get rid of all xml related configurations.
+
+--spring boot supports auto-configuration.
+
+--with the help of Spring boot we can avoid lots of boiler plate code to develop a spring applicaiton.
+
+--it provides integrated tomcat server,so we can develop our webapplication without installing a server explicitly.
+
+
+
+--spring boot provided cloud support and some third party api support to develop microservices.
+
+
+ 
+there r various way to use Spring boot to develop a spring application:-
+=======================================================================
+
+
+1--by installing STS plugin in eclipse
+
+2--by installing entire STS s/w (eclipse with STS plugin configured).
+
+3--by using SpringInitializr (start.spring.io) website
+
+4--by using spring CLI (command line interface)
+
+5--by using maven project (add the spring-boot related jar files).
+
+
+
+first spring boot application:- by using spring initializr website:-
+=====================================================================
+
+--if we need a jdbc support,cloud support just add that from the wizard
+
+--here we need to create a spring application with requied features and dependency and then download that file (zip file) and after unzipping in import to our eclipse by using maven project.
+
+
+here basic structure of the required type of project is created.
+
+
+after importing the file
+
+
+create a seperate class A.java inside the same package where is main class is created.by annotating with @Component.
+
+
+
+A.java:-
+--------
+
+
+@Component
+public class A {
+
+	public void fun1(){
+		System.out.println("inside funA");
+	}
+	
+	
+}
+
+
+--do the following changes inside main class:-
+
+
+
+@SpringBootApplication
+public class MyspringbootusingSiApplication {
+
+	public static void main(String[] args) {
+
+ConfigurableApplicationContext ctx= SpringApplication.run(MyspringbootusingSiApplication.class, args);	
+	
+Sop("welcome to Springboot application");
+
+//A a1=ctx.getBean("a",A.class); //byName
+
+//or
+
+A a1=ctx.getBean(A.class);//byType
+	
+	a1.fun1();
+	
+	}
+}
+
+
+
+--run the project as either springboot project or normal java application.but if we want to use spring feature we should run as springbootpapp
+
+
+
+
+if class A is in in diff package p1:- 
+------------------------------------
+
+then :- use @ComponentScanaing:-
+
+ex:-
+
+
+
+@SpringBootApplication
+@ComponentScan(basePackages={"p1"})
+public class MyspringbootusingSiApplication {
+
+	public static void main(String[] args) {
+	ConfigurableApplicationContext ctx=	SpringApplication.run(MyspringbootusingSiApplication.class, args);
+	
+	A a1=ctx.getBean("a",A.class);
+	
+	a1.fun1();
+	
+	}
+
+}
+
+
+--in STS ,we need to create a spring Starter project.
+
+here also from service URL https://start.spring.io is there.
+
+
+
+
+develop a web application using spring boot:-
+=============================================
+
+step 1:- create a project by using springInitializr
+
+--give the project name (springbootwebapp1)
+
+here we need to add web featutes from SpringInitialzr while creating a new project.
+
+
+1.web
+
+we can add other capabilities also,but here lets just one only.
+
+then finish.
+
+
+Note:- this will be a by default spring-mvc project which has autoconfigued DS in it with url pattern(/).
+
+
+step 2:-create folder webapp under src/main folder and develop a .jsp file in it.(a.jsp) 
+
+
+step 3:- create controller class :- 
+
+annotate it will @Controller, if this class is in diff package then use 
+@ComponentScan annotation on main class (which has a main method.)
+
+write a request handling method that retun "a.jsp" String.
+
+
+
+step 4:-
+
+by default this spring boot web project does not support the jsp file,in order to add the jsp file capabilities we need to add tomcat-jasper.jar file in pom.xml (the version we verify by tomcat version jar is added in mavendependency in our project).
+
+
+step 5:- run the project by using springboot application
+
+
+
+
+
+
+
+
+Note:- in this project .jsp file will not be recognized..
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
