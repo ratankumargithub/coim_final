@@ -1,0 +1,664 @@
+Spring App: with Xml + DBUtil:-(Injecting through Factory method)
+==============================
+
+DBUtil.java:-
+------------
+
+package com.cts;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+public class DBUtil {
+	
+	private static Connection conn;
+	
+	public static Connection createConnection(){
+		
+		if(conn == null){
+			
+			try {
+				Class.forName("com.mysql.cj.jdbc.Driver");
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			
+			String url="jdbc:mysql://localhost:3306/ratandb";
+			
+			try {
+		conn=DriverManager.getConnection(url,"root","root");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}	
+		}
+		return conn;
+	}
+
+}
+
+
+StudentBean.java:-
+-----------------
+
+
+public class StudentBean implements Serializable{
+
+	
+	private int roll;
+	private String name;
+	private int marks;
+
+}
+
+
+
+DaoBean.java:-
+--------------
+
+public class DaoBean {
+	
+	private Connection conn;
+	
+
+	public void setConn(Connection conn) {
+		this.conn = conn;
+	}
+
+	public boolean insertStudentDetails(StudentBean student){
+		
+		boolean flag=false;
+				
+		try {
+			
+		
+PreparedStatement ps=conn.prepareStatement("insert into student values(?,?,?)");
+			
+			
+			ps.setInt(1, student.getRoll());
+			ps.setString(2, student.getName());
+			ps.setInt(3, student.getMarks());
+			
+			int x=ps.executeUpdate();
+			
+			if(x>0)
+				flag=true;
+			
+			
+			conn.close();
+			
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}		
+		return flag;
+	}	
+
+}
+
+Test.java:-
+----------
+
+public class Test {
+
+	DaoBean dao;
+	
+	public void setDao(DaoBean dao) {
+		this.dao = dao;
+	}
+
+	public void execute(){
+		
+		
+		Scanner sc=new Scanner(System.in);
+		
+		System.out.println("Enter Roll :");
+		int roll=sc.nextInt();
+		
+		System.out.println("Enter Name :");
+		String name=sc.next();
+		
+		System.out.println("Enter Marks :");
+		int marks=sc.nextInt();
+		
+		
+		StudentBean student=new StudentBean(roll, name, marks);
+		
+		boolean f=dao.insertStudentDetails(student);
+		
+		if(f)
+			System.out.println("Record inserted..");
+		else
+			System.out.println("Not Inserted..");
+		
+	}
+	
+	public static void main(String[] args) {
+				
+ApplicationContext ctx=new ClassPathXmlApplicationContext("beans.xml");
+		
+		  Test t=ctx.getBean("test",Test.class);
+		
+		  t.execute();		
+	}
+
+}
+
+
+
+
+beans.xml:-
+----------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<bean id="db" class="com.cts.DBUtil" factory-method="createConnection"/>
+
+<bean id="dao1" class="com.cts.DaoBean">
+<property name="conn" ref="db"/>
+</bean>
+
+<bean id="test" class="com.cts.Test">
+<property name="dao" ref="dao1"/>
+</bean>
+
+</beans>
+
+
+
+Spring App: with Xml + DBUtil + properties file:
+================================================
+
+DBUtil.java:-
+------------
+
+package com.cts;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+public class DBUtil {
+		
+	private static Connection conn;
+	
+	public static Connection createConnection(String dname,String url){
+		
+		if(conn == null){
+			
+			try {
+				Class.forName(dname);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			
+			try {
+		conn=DriverManager.getConnection(url,"root","root");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return conn;
+	}
+
+}
+
+
+
+a1.properties:-
+--------------
+
+dname=com.mysql.cj.jdbc.Driver
+url=jdbc:mysql://localhost:3306/ratandb
+
+
+beans.xml:-
+----------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd" >
+
+<context:property-placeholder location="a1.properties" />
+
+
+<bean id="db" class="com.cts.DBUtil" factory-method="createConnection">
+<constructor-arg value="${dname}"/>
+<constructor-arg value="${url}"/>
+</bean>
+
+<bean id="dao1" class="com.cts.DaoBean">
+<property name="conn" ref="db"/>
+</bean>
+
+
+<bean id="test" class="com.cts.Test">
+<property name="dao" ref="dao1"/>
+</bean>
+
+
+</beans>
+
+
+StudentBean,DaoBean,Test class from previous app.
+
+
+
+Spring App: with Anno + DBUtil + properties file:-
+==================================================
+
+a1.properties,StudentBean from previous app.
+
+
+
+
+DBUtil.java:-
+------------
+
+
+@Component
+public class DBUtil {
+	
+	
+	private static Connection conn;
+	
+	@Bean
+	public static Connection createConnection(@Value("${dname}")String 					dname,@Value("${url}") String url){
+		
+		if(conn == null){
+			
+			try {
+				Class.forName(dname);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			
+			
+			try {
+		conn=DriverManager.getConnection(url,"root","root");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		return conn;
+	}
+
+}
+
+
+DaoBean.java:-
+-------------
+
+
+@Component
+public class DaoBean {
+	
+	@Autowired
+	private Connection conn;
+	
+	public void setConn(Connection conn) {
+		this.conn = conn;
+	}
+
+	public boolean insertStudentDetails(StudentBean student){
+		
+		boolean flag=false;
+		
+		
+		try {
+			
+		
+PreparedStatement ps=conn.prepareStatement("insert into student values						(?,?,?)");
+			
+			
+			ps.setInt(1, student.getRoll());
+			ps.setString(2, student.getName());
+			ps.setInt(3, student.getMarks());
+			
+			int x=ps.executeUpdate();
+			
+			if(x>0)
+				flag=true;
+			
+			
+			conn.close();
+	
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+			
+		return flag;
+	}
+}
+
+
+AppConfig.java:-
+---------------
+
+
+@Configuration
+@ComponentScan(basePackages="com.cts")
+@PropertySource("a1.properties")
+public class AppConfig {
+	
+	
+	@Bean 
+	public  PropertySourcesPlaceholderConfigurer pc(){
+		
+		return new PropertySourcesPlaceholderConfigurer();
+		
+	}
+	
+}
+
+
+Note:- the above pc() method need not be static since we r not resolving properties file value inside this AppConfig class itself.here we r resolving the properties file inside DBUtil class.
+
+--we we try to resolve the properties file value inside this AppConfig class itself then this pc() method must be static.
+
+
+Test.java:-
+---------
+
+@Component
+public class Test {
+
+	@Autowired
+	DaoBean dao;
+	
+	public void setDao(DaoBean dao) {
+		this.dao = dao;
+	}
+
+
+
+	public void execute(){
+		
+		
+		Scanner sc=new Scanner(System.in);
+		
+		System.out.println("Enter Roll :");
+		int roll=sc.nextInt();
+		
+		System.out.println("Enter Name :");
+		String name=sc.next();
+		
+		System.out.println("Enter Marks :");
+		int marks=sc.nextInt();
+		
+		
+		StudentBean student=new StudentBean(roll, name, marks);
+		
+		boolean f=dao.insertStudentDetails(student);
+		
+		if(f)
+			System.out.println("Record inserted..");
+		else
+			System.out.println("Not Inserted..");
+		
+	}
+	
+	public static void main(String[] args) {
+		
+ApplicationContext ctx=new AnnotationConfigApplicationContext							(AppConfig.class);
+		
+		  Test t=ctx.getBean("test",Test.class);
+		
+		  t.execute();		
+	}
+
+}
+
+
+Spring App: with anno + DataSource + properties file:-
+=====================================================
+
+
+a1.properties:-
+--------------
+
+dname=com.mysql.cj.jdbc.Driver
+url=jdbc:mysql://localhost:3306/ratandb
+
+StudentBean class from previous app
+
+
+DaoBean.java:-
+-------------
+
+
+@Component
+public class DaoBean {
+	
+	@Autowired
+	private DataSource ds;
+		
+	public boolean insertStudentDetails(StudentBean student){
+		
+		boolean flag=false;
+			
+		try {
+			
+			Connection conn=ds.getConnection();
+			
+PreparedStatement ps=conn.prepareStatement("insert into student values							(?,?,?)");
+			
+			
+			ps.setInt(1, student.getRoll());
+			ps.setString(2, student.getName());
+			ps.setInt(3, student.getMarks());
+			
+			int x=ps.executeUpdate();
+			
+			if(x>0)
+				flag=true;
+			
+			
+			conn.close();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return flag;
+	}
+
+}
+
+
+AppConfig.java:-
+---------------
+
+package com.cts;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.stereotype.Component;
+
+@Configuration
+@ComponentScan(basePackages="com.cts")
+@PropertySource("a1.properties")
+public class AppConfig {
+	
+	
+	@Value("${dname}")
+	String dname;
+	
+	@Value("${url}")
+	String url;
+	
+
+	@Bean
+	public static PropertySourcesPlaceholderConfigurer pc(){
+		return new PropertySourcesPlaceholderConfigurer();	
+	}
+	
+	@Bean
+	public DataSource getDs(){
+		
+		DriverManagerDataSource dmds=new DriverManagerDataSource();
+		
+		dmds.setDriverClassName(dname);
+		dmds.setUrl(url);
+		dmds.setUsername("root");
+		dmds.setPassword("root");
+		
+		return dmds;
+	}	
+}
+
+
+--here we can not use ${} inside @Bean annotated method becoz Container will first create the obj of our @Configuration annotated class then by using PSPHC obj,it resolve the property placeholder then it will call to the @Bean annotated method.so the placeholder inside the @Bean annotated method will remains unresolved...
+
+--In order to access resolve the property file placeholder inside the @Bean annotated method,we need to use Spring f/w given an inbuilt bean called "Environment" with @Autowired annotation.
+
+ex:-
+
+
+AppConfig.java:-
+----------------
+
+
+package com.cts;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.stereotype.Component;
+
+@Configuration
+@ComponentScan(basePackages="com.cts")
+@PropertySource("a1.properties")
+public class AppConfig {
+	
+	@Autowired
+	Environment env;
+		
+	@Bean
+	public static PropertySourcesPlaceholderConfigurer pc(){
+		return new PropertySourcesPlaceholderConfigurer();	
+	}
+	
+	@Bean
+	public DataSource getDs(){
+		
+		DriverManagerDataSource dmds=new DriverManagerDataSource();
+		
+		dmds.setDriverClassName(env.getProperty("dname"));
+		dmds.setUrl(env.getProperty("url"));
+		dmds.setUsername("root");
+		dmds.setPassword("root");
+		
+		return dmds;
+	}	
+}
+ 
+
+
+Test.java:-
+----------
+
+package com.cts;
+
+import java.util.Scanner;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.stereotype.Component;
+
+@Component
+public class Test {
+
+	@Autowired
+	DaoBean dao;
+	
+	public void setDao(DaoBean dao) {
+		this.dao = dao;
+	}
+	public void execute(){
+		
+		
+		Scanner sc=new Scanner(System.in);
+		
+		System.out.println("Enter Roll :");
+		int roll=sc.nextInt();
+		
+		System.out.println("Enter Name :");
+		String name=sc.next();
+		
+		System.out.println("Enter Marks :");
+		int marks=sc.nextInt();
+		
+		
+		StudentBean student=new StudentBean(roll, name, marks);
+		
+		boolean f=dao.insertStudentDetails(student);
+		
+		if(f)
+			System.out.println("Record inserted..");
+		else
+			System.out.println("Not Inserted..");
+		
+	}
+	
+	public static void main(String[] args) {
+		
+		
+ApplicationContext ctx=new AnnotationConfigApplicationContext							(AppConfig.class);
+		
+		  Test t=ctx.getBean("test",Test.class);
+		
+		  t.execute();
+		
+	
+		
+	}
+
+}
+
+
+
+
+
+
+
+
+
