@@ -137,34 +137,6 @@ Note:- if we don't use the @ModelAttribute inside the parameter,now if control i
 --but if we use @ModelAttribute inside parameter then the old initial value from the Model will be updated with the form page Snapshot value and with validated value.
 
 
-
-
-Loading the default values in drop downlist and in checkbox:-
--------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Form page validation:-
 ======================
 
@@ -520,6 +492,202 @@ Enter Marks :<f:input path="marks" /><f:errors path="marks"/><br><br>
 
 
 --in the above method,we used @Valid annotation to the bean class to just validate the form feild,if any validation fails then it will be binded to the BindingResult obj by the f/w.
+
+
+Validating the Check box:-
+=========================
+
+Example MultiCheck box:-
+-----------------------
+
+
+StudentBean.java:-
+-----------------
+
+
+public class StudentBean implements Serializable{
+
+	private int roll;
+	@Size(min=4,message="the size must be 4 charecter")
+	private String name;
+	private int marks;
+	
+	@NotEmpty(message="Check box is mandaotry...")
+	private String[] courses;
+	
+	
+	//getters and setters
+
+}
+
+}
+
+
+
+home.jsp:-
+---------
+
+<%@ taglib prefix="f" uri="http://www.springframework.org/tags/form" %>
+    
+
+<body bgcolor="pink">
+
+<h1>Welcome to Spring Mvc</h1>
+
+<f:form action="registerStudent" method="post" modelAttribute="student">
+
+
+Enter Roll :<f:input path="roll"/> <f:errors path="roll"/><br><br>
+
+Enter Name :<f:input path="name"/> <f:errors path="name"/><br><br>
+
+Enter Marks :<f:input path="marks"/> <f:errors path="marks"/><br><br>
+
+Select Courses :
+
+<f:checkbox path="courses" value="Java"/>Java
+<f:checkbox path="courses" value="Angular"/>Angular
+<f:checkbox path="courses" value="Spring"/>Spring
+
+<f:errors path="courses"/>
+
+<input type="submit" value="Register">
+
+
+</f:form>
+
+</body>
+
+
+MyController.java:-
+-------------------
+
+@Controller
+public class MyController {
+	
+	
+	@RequestMapping(value="/" ,method=RequestMethod.GET)
+	public String homeRequest(Model model){
+	
+		//setting the initial value to the form
+		String clist[]={};
+		model.addAttribute("student", new StudentBean(100, "ram", 							850,clist));
+		
+		return "home";
+	}
+	
+	
+	
+	@RequestMapping(value="registerStudent")
+	public ModelAndView registerStudent(@Valid @ModelAttribute			("student") StudentBean s,BindingResult br){
+	
+		ModelAndView mv=new ModelAndView();
+		
+		if(br.hasErrors()){
+			
+			System.out.println(br.getAllErrors());
+			
+			mv.setViewName("home");
+			return mv;
+		}
+		else{
+		
+		mv.setViewName("result");
+				
+		return mv;
+		}
+	}
+	
+}
+	
+
+Note:- if we want to check some course bydefault while loading the form then we need to modify the above "homeRequest" method as follows:-
+
+
+@RequestMapping(value="/" ,method=RequestMethod.GET)
+	public String homeRequest(Model model){
+	
+		//setting the initial value to the form
+	String clist[]={"Java"};  //here Java will be checked by default
+		model.addAttribute("student", new StudentBean(100, "ram", 							850,clist));
+		
+		return "home";
+	}
+	
+
+
+
+
+
+
+
+result.jsp:-
+-----------
+
+<body bgcolor="pink">
+
+
+ <% StudentBean s= (StudentBean)request.getAttribute("student"); 
+ 
+	 String ar[]=s.getCourses();
+	 String c=Arrays.toString(ar);
+ %>
+
+<h2>Roll is <%=s.getName() %></h2>
+<h2>Name is <%=s.getRoll() %></h2>
+<h2>Marks is <%=s.getMarks() %></h2>
+<h2>Courses are <%=c %></h2>
+
+
+
+<%-- comment
+
+<h2>Roll is ${student.roll }</h2>
+<h2>Name is ${student.name }</h2>
+<h2>Marks is ${student.marks }</h2>
+
+<h2>Courses Are ${student.courses[0] }</h2>
+
+ --%>
+
+</body>
+
+
+
+Single CheckBox Example:-
+-------------------------
+
+--incase of Single Check box we should not take String[] instead we should take boolean field in the mapping bean class.
+
+ex:-
+
+
+public class StudentBean{
+
+	boolean isIndian;
+	//...
+}
+
+
+<form:checkbox path="isIndian" />
+
+
+Loading data dynamically.
+
+Radio Button
+
+Select Box
+
+
+Custom Validation:-
+
+
+
+
+
+
+
+
 
 
 
