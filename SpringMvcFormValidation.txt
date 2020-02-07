@@ -1,0 +1,543 @@
+Binding Model data to the form controls:-
+-----------------------------------------
+
+--from the Model obj if we want to get the attributes and binds it to our <form> date, then we need to use "modelAttribute" attribute inside the <form> tag and the value should be the key in our Model obj.
+
+--here we need to use spring f/w given form tag library
+
+ex:-
+
+
+MyController.java:-
+-------------------
+
+
+
+@Controller
+public class MyController {
+	
+	@RequestMapping(value="/" ,method=RequestMethod.GET)
+	public String homeRequest(Model m){
+		
+		StudentBean student=new StudentBean();
+		
+		m.addAttribute("student", student);
+		//here this model data will be binded to our form controls			//here name of the student class property and the form-field
+		//name must be same.
+
+		return "home";
+				
+	}
+
+
+home.jsp:-
+--------
+
+
+<%@ taglib prefix="f" uri="http://www.springframework.org/tags/form" %>
+
+
+<f:form action="registerStudent" method="post" modelAttribute="student">
+
+
+Enter Roll :<f:input path="roll"/> <br><br>
+
+Enter Name :<f:input path="name"/> <br><br>
+
+Enter Marks :<f:input path="marks"/><br><br>
+
+<input type="submit" value="Register">
+
+
+</f:form>
+
+
+
+Note:- in the above application,if we don't want to bind the Model data(student obj with default value) from "homeRequest(-)" method to our <form>,then we can pass that Model data from another method also.
+
+--and that method need to be annotated with @ModelAttribute .
+
+
+@ModelAttribute:- this attribute can be applied 
+
+1.either to a method level or
+
+2.
+in side a method parameter.
+
+
+
+method level:-
+-------------
+
+@ModelAttribute
+public void fun1(Model model) {
+    model.addAttribute("student", new StudentBean(100,"Ram",850));
+}
+
+
+--here the above method will be called before any @RequestMapping annotated method is called. and after this method is being called ,we have a Model obj with one attribure by name "student" and the value is Student obj.
+
+
+--this Model obj is Sharable among all the @RequestMapping annotated methods.
+
+--so from any @RequstMapping method,if we r transferring the control to the jsp.that Model attribute data we can get in that jsp from request scope.
+
+
+Basically we use @ModelAttribute anno at the method level to pass some initial data to our form control fields.
+
+***Note:- if we r using spring given <form> tag in our form page then binding that form with modelAttribute is mandatory and we must supply initial form field data through Model obj,either adding that data inside the request handling method (By taking Model as a parameter of that method) or by using other method annotated with @ModelAttribute.
+
+
+Note:- in "modelAttribute" attribute of form tag we can not pass key of a primitive,we r only allowed to pass key of an Command class,becoz inorder to load the initial values to the form feild spring f/w will call getter(-) method of our command class.
+
+Note:- in order to validate our form field we need to apply validation annotaitons on our bean class and when we submit that form then that form data will be mapped(populated) to our bean class obj automatically(if we supply our bean class as a parameter of request handling method).
+
+--after that in order to initiate the validation on our bean obj we need to apply @Valid annotation on that obj.ex:-
+
+@RequestMapping(value="registerStudent")
+	public String registerStudent(@Valid StudentBean s,BindingResult br){
+
+--
+	 
+}
+
+
+--if any validation fails than f/w will compose the BindingResult obj and expose this obj to our request handling method..so to get hold of that obj we need to take BindingResult as parameter of our request handling method.
+
+
+--now if any error will occur we need to redirect the user to the same form page with the snapshot value of that form page as a Model attribute.
+
+--this time we need to override the previous Model attribute "student"(which has the initial value) with the another student obj with the snapshot value.
+
+--we override that initail Model attribute student by taking @ModelAttribute annotation inside the request handling method parameter
+
+ex:-
+
+@RequestMapping(value="registerStudent")
+	public String registerStudent(@Valid @ModelAttribute("student")StudentBean s,BindingResult br){
+
+
+if(br.hasErrors){
+
+return "index";
+}
+
+else
+{
+return "sucess";
+}
+
+	 
+}
+
+
+Note:- if we don't use the @ModelAttribute inside the parameter,now if control is redirected to index page(form page) again,then it will load again previous student obj from Model with initail and not validated value.
+
+--but if we use @ModelAttribute inside parameter then the old initial value from the Model will be updated with the form page Snapshot value and with validated value.
+
+
+
+
+Loading the default values in drop downlist and in checkbox:-
+-------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Form page validation:-
+======================
+
+--we need to validate a form in JS as well as in server side programming, when a valid value will come form the client,then only SL method should be called by the controller.
+
+
+--to use the annotation based validation in spring-mvc we the annotations of "Bean validation API" and the annotations of "Hibernate validator api" to perform validations on the i/p values.
+
+--"Hibernate validator api" is reference implementation of bean validaiton api.
+
+
+--to use "Hibernate validator api" add the following dependencies in POM.xml:-
+
+
+
+
+<dependency>
+
+<gid>org.hibernate</gid>
+<aid>hibernate-validator</aid>
+<v>5.1.0.FINAL</v>
+
+</dependency>
+
+
+
+
+
+
+
+--the following r the list of annotations of "Bean validation api":-
+
+
+1.@AssertTrue:- 
+--------------
+
+--the value of boolean field must be true.
+
+ex:-
+
+
+@AssertTrue
+private boolean married;
+
+
+
+2.AssertFalse:-
+---------------
+
+--the value of boolean field must be false.
+
+ex:-
+
+@AssertFalse
+private boolean married;
+
+
+
+
+3.@DecimalMax:- 
+----------------
+
+--the value of double field must be less that or equal to given value.
+
+ex:-
+
+
+@DecimalMax("30.15")
+private double price;
+
+
+
+
+4.DecimalMin:-
+--------------
+
+--the value of double field must be greater than or equal to given value.
+
+ex:-
+
+@DecimalMin("12.15")
+private double price;
+
+
+
+5.@Min:-
+---------
+
+--the value of interger type must be >= given type.
+
+ex:-
+
+@Min(18)
+private int age;
+
+
+
+6.@Max:-
+--------
+
+--the value of interger type must be <= given type.
+
+ex:-
+
+@Max(18)
+private int age;
+
+
+
+7.@NotNull:-
+------------
+
+--the value of the field must not be null.
+
+ex:-
+
+
+@NotNull
+private String name;
+
+
+
+8.@Null:-
+--------
+
+--the value of the field must be null.
+
+
+9.@Size:-
+---------
+
+
+--the length of a String must be within given range.
+
+ex:-
+
+
+@Size(min=5,max=8)
+private String password;
+
+
+10.@Pattern:-
+-------------
+
+--the value of the field must match the given expression.
+
+ex:-
+
+
+@Pattern(regexp="^[A-Z][A-Z]*")
+private String username;
+
+
+11.@Past:-
+----------
+
+--the value of the Date field should be a past date.
+
+ex:-
+
+@Past
+private Date dob;
+
+
+12.@Future:-
+-----------
+
+--the value of the Date field should be a future date.
+
+ex:-
+
+@Future
+private Date expDate;
+
+
+13.@DateTimeFormat:-
+--------------------
+
+--the value of Date field must be in a given format.
+
+@DateTimeFormat(pattern="dd-MM-yyyy")
+private Date joinDate;
+
+
+
+--List of "Hibernate validator Api" annotaions:-
+------------------------------------------------
+
+
+@CreditCardNumber
+
+@Email
+
+@NotEmpty
+
+@NotBlank
+
+@Range
+
+
+
+
+--diff bt @NotNull,@NotEmpty and @NotBlank:-
+--------------------------------------------
+
+--@NotEmpty and @NotBlank checks for the not null also.
+
+--@NotBlank validates to true,if the size of String should be greater than zero after trimming.
+
+
+ex1:-
+
+String str=null;
+
+@NotNull---false
+@NotEmpty--false
+@NotBlank--false
+
+
+
+ex2:-
+
+String str="";
+
+@NotNull---true
+@NotEmpty--false
+@NotBlank--false
+
+
+ex3:-
+
+String str="   ";
+
+@NotNull---true
+@NotEmpty--true
+@NotBlank--false
+
+
+ex4:-
+
+String str="hello";
+
+@NotNull---true
+@NotEmpty--true
+@NotBlank--true
+
+
+
+defining error msg:-
+--------------------
+
+--while validating the i/p fields,if any validation on a field is failed then we must show an error msg to the user on browser.
+
+
+--we can define error msg using 'message' element of thses validator annotaitons.
+
+
+ex:-
+
+@Size(min=4,max=8,message="User name must be >=4 and <=8")
+private String uname;
+
+
+@NotEmpty(message="Password is mandatory")
+private String pwd;
+
+
+
+
+
+
+
+
+to perform the validation on the form feild on spring-mvc:-
+===========================================================
+
+--when we gives the req to the form page first time,that time only we need to tell the form page,to bind the bean class obj with the form fileds,so while rendering the first req to the form page we send also bean obj putting that in Model obj
+
+
+ex:-
+
+	@RequestMapping(value="studentregister",method=RequestMethod.GET)
+	public String registerStudentform(Model m){
+			Student student=new Student();
+			m.addAttribute("student", student);
+		return "regStudent"; 
+	}
+ 
+
+--here Student bean class obj is binded with model attribute with name "student" with initial value.
+
+
+--now in order to bind this bean obj with form page and also to display the validation fails errors in the same page we need to devlop form page by using spring mvc supplied form tags:-
+
+in order to use these tags we need to import it by using jsp taglib directive :-
+
+
+ex:-
+
+
+<body>
+<h1>Student Registration Screen</h1>
+
+    <%@ taglib prefix="f" uri="http://www.springframework.org/tags/form" %>
+
+<f:form action="studentregisterctr" method="post" modelAttribute="student" >
+
+
+Enter Roll :<f:input path="roll"/> <f:errors path="roll"/> <br><br>
+Enter Name :<f:input path="name"/> <f:errors path="name"/><br><br>
+Enter Marks :<f:input path="marks" /><f:errors path="marks"/><br><br>
+
+<input type="submit" value="Register">
+
+</f:form>
+
+</body>
+
+
+
+
+--to handle this form page,we need to write following requset handling method:-
+
+
+	@RequestMapping(value="studentregisterctr",method=RequestMethod.POST)
+	public ModelAndView registerStudent(@Valid Student student,BindingResult be){
+		
+		System.out.println(be.hasErrors()+"===================");
+		if(be.hasErrors()){
+			
+			List l=be.getFieldErrors();
+			
+			System.out.println(l);
+			
+			return new ModelAndView("regStudent");
+		}
+		else{
+			
+		ModelAndView mv=new ModelAndView();
+		mv.setViewName("result");
+		
+		String s=dao.registerStudent(student);
+		
+		mv.addObject("nm", student.getName());
+		mv.addObject("mr", student.getRoll());
+		mv.addObject("rl", student.getMarks());
+		mv.addObject("msg",s);
+		
+		return mv;
+		}
+	}
+
+
+
+--in the above method,we used @Valid annotation to the bean class to just validate the form feild,if any validation fails then it will be binded to the BindingResult obj by the f/w.
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+

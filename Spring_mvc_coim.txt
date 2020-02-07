@@ -643,6 +643,14 @@ public class SpringAppConfig {
 
 
 
+Note:- @EnableWebMvc anno ,If we don't use this annotation we might not initially notice any difference but things like content-type and accept header, generally content negotiation won't work.
+
+--this Anno is basically alternate for <mvc:annotation-driven /> xml tag.
+
+
+
+
+
 MyDSInitializer.java:-
 -----------------------
 
@@ -719,7 +727,7 @@ simmilar way we have
 
 
 
-1.we can take parameter in the method as same as request parameter is comming,and if method parameter name and request parameter name is same then that value will be injected in those parameter variables.
+1.we can take parameter in the method as same as the request parameter is comming,and if method parameter name and request parameter name is same then that value will be injected in those parameter variables.
 
 
 ex:-
