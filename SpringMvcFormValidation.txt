@@ -873,6 +873,211 @@ public class RollNumberValidator implements ConstraintValidator<RollValid, Integ
 2.By creating a class to implement Validator api.
 =================================================
 
+Custom validation for Form page:-
+--------------------------------
+
+we need to create a class (Spring bean)by implementing Validator interface.
+
+--this class need to be annotated with @Component
+
+
+
+ex:-
+
+
+@Component
+public class StudentValidator implements Validator {
+
+	@Override
+	public boolean supports(Class c) {
+
+		//to check whether supplied class is valid form backing class or not.
+		return StudentBean.class.isAssignableFrom(c);
+	}
+
+	@Override
+	public void validate(Object obj, Errors err) {
+		
+		StudentBean s=(StudentBean)obj;
+		
+		if(s.getRoll()<100){
+
+			err.rejectValue("roll","","roll number should be greater than 100");
+			
+	//here first parameter is field name,second prameter is key of a property file,if we r
+	//using any properties file to specify the reusable vaidation error msg.
+	//and the 3rd parameter is the default msg..if we don't use properties file.
+	
+
+	//we can write validation logic for any feilds ex:-
+
+
+	if(s.getName().equals("ram")){
+		
+		err.rejectValue("name","","Name should not be ram");
+	
+	}
+
+
+}	
+		
+	}
+}
+
+
+
+
+
+MyController class:-
+---------------------
+
+
+@Controller
+public class MyController {
+	
+	@ModelAttribute()
+	public void funx(Model m){
+		
+		String clist[]={};
+		m.addAttribute("student", new StudentBean(5, "amit", 750,clist,false,"",""));
+	}
+	
+	@Autowired
+	StudentValidator val;
+	
+	
+	@RequestMapping(value="/" ,method=RequestMethod.GET)
+	public String homeRequest(Model model){
+	
+		//setting the initial value to the form
+		String clist[]={};
+		model.addAttribute("student", new StudentBean(100, "ram", 850,clist,false,"",""));
+		
+		return "home";
+	}
+	
+	
+	
+	@RequestMapping(value="registerStudent")
+public ModelAndView registerStudent(@Valid @ModelAttribute("student") StudentBean s,BindingResult br){
+	
+		ModelAndView mv=new ModelAndView();
+		
+		val.validate(s, br);
+			
+		if(br.hasErrors()){
+			
+			System.out.println(br.getAllErrors());
+			
+			mv.setViewName("home");
+			return mv;
+		}
+		else{
+		
+		mv.setViewName("result");
+			
+		return mv;
+		}
+	}
+	
+}
+	
+
+
+
+
+writing validation errors msg with the help of properties files:-
+----------------------------------------------------------------
+
+
+step1:- develop a properties file under WEB-INF folder called "messages.properties".
+
+with some error code as a key  and corresponding msg as value.
+
+
+ex:-
+
+
+message.properties:-
+--------------------
+
+name.required=Name is mandarory ....
+
+
+step 2:- configure the ReloadableResourceBundleMessageSource class as a spring Bean with name "messageSource" in AppConfig class and set the location of properties file (only the basename)
+ex:-
+
+	@Bean(name="messageSource")
+	public ReloadableResourceBundleMessageSource rbms() {
+			
+			ReloadableResourceBundleMessageSource rb=new 						ReloadableResourceBundleMessageSource();
+			
+			rb.setBasename("/WEB-INF/messages");
+			
+			return rb;		
+	}
+
+
+
+step 3:-
+
+inside validate method of StudentValidator class apply the validation logic and inside the rejectValue()method specify the key of properties file.
+
+ex:-
+
+
+public void validate(Object obj, Errors err) {
+		
+		StudentBean s=(StudentBean)obj;
+		
+				
+		if(s.getName().equals("")) {
+			err.rejectValue("name","name.required");
+
+			//or we can pass some default msg as well..
+		    //err.rejectValue("name","name.required","defuale msgg...");
+			
+		}
+	}
+	
+
+
+
+
+passing dynamic msg arguments to our properties file:-
+-----------------------------------------------------
+
+step1:-
+make a place holder in the properties file:-
+
+ex:-
+
+message.properties:-
+--------------------
+
+name.required=Name is mandarory{0} {1}....
+
+
+
+step2:-
+
+inside validate method of StudentValidator class apply the validation logic and inside the rejectValue()method specify the key of properties file and supply the placeholde params with Object []
+
+if(s.getName().equals("")) {
+err.rejectValue("name","name.required",new Object[] {"hello","welcome"},"deault msg..");
+		
+	}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
