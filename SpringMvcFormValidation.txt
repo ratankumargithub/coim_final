@@ -1,7 +1,7 @@
 Binding Model data to the form controls:-
 -----------------------------------------
 
---from the Model obj if we want to get the attributes and binds it to our <form> date, then we need to use "modelAttribute" attribute inside the <form> tag and the value should be the key in our Model obj.
+--from the Model obj if we want to get the attributes and binds it to our <form> data, then we need to use "modelAttribute" attribute inside the <form> tag and the value should be the key in our Model obj.
 
 --here we need to use spring f/w given form tag library
 
@@ -132,7 +132,7 @@ return "sucess";
 }
 
 
-Note:- if we don't use the @ModelAttribute inside the parameter,now if control is redirected to index page(form page) again,then it will load again previous student obj from Model with initail and not validated value.
+Note:- if we don't use the @ModelAttribute inside the parameter,now if control is redirected to index page(form page) again,then it will load again previous student obj from Model with initail and not validated value.if we have written @ModelAttribute annotated method,otherwise it will generate error.
 
 --but if we use @ModelAttribute inside parameter then the old initial value from the Model will be updated with the form page Snapshot value and with validated value.
 
@@ -143,7 +143,7 @@ Form page validation:-
 --we need to validate a form in JS as well as in server side programming, when a valid value will come form the client,then only SL method should be called by the controller.
 
 
---to use the annotation based validation in spring-mvc we the annotations of "Bean validation API" and the annotations of "Hibernate validator api" to perform validations on the i/p values.
+--to use the annotation based validation in spring-mvc we use the annotations of "Bean validation API" and the annotations of "Hibernate validator api" to perform validations on the i/p values.
 
 --"Hibernate validator api" is reference implementation of bean validaiton api.
 
@@ -462,7 +462,7 @@ Enter Marks :<f:input path="marks" /><f:errors path="marks"/><br><br>
 
 
 	@RequestMapping(value="studentregisterctr",method=RequestMethod.POST)
-	public ModelAndView registerStudent(@Valid Student student,BindingResult be){
+	public ModelAndView registerStudent(@Valid @ModelAttribute("student")Student student,BindingResult be){
 		
 		System.out.println(be.hasErrors()+"===================");
 		if(be.hasErrors()){
@@ -664,6 +664,7 @@ ex:-
 
 public class StudentBean{
 
+	@AssertTrue(message = "must check this value.")
 	boolean isIndian;
 	//...
 }
@@ -672,14 +673,220 @@ public class StudentBean{
 <form:checkbox path="isIndian" />
 
 
-Loading data dynamically.
 
-Radio Button
 
-Select Box
+Validation for Radio Button:-
+============================
+
+StudentBean:- take a variable to hold the selected radio button
+-----------
+
+@NotBlank(message= "must select gender..")
+	private String gender;
+	
+
+
+MyController:- assigns the empty string to that variable as a initial value
+-------------
+either inside the @ModelAttribute annotated method of inside the form page forwarding request handling method.
+
+ex:
+
+--for @ModelAttribute annotated method:-
+
+	@ModelAttribute()
+	public void funx(Model m){
+		
+String clist[]={};
+m.addAttribute("student", new StudentBean(5, "amit", 750,clist,false,""));
+	
+}
+
+
+--for form page forwarding request handling method:-
+
+@RequestMapping(value="/" ,method=RequestMethod.GET)
+	public String homeRequest(Model model){
+	
+		//setting the initial value to the form
+		String clist[]={};
+model.addAttribute("student",new StudentBean(100,"ram",850,clist,false,""));
+		
+		return "index";
+	}
+	
+
+--in index.jsp(form page) make an entry for Gender radio button:-
+
+ex:-
+
+Select Gender : 
+<f:radiobutton path="gender" value="male"/>Male
+<f:radiobutton path="gender" value="female"/>Female<f:errors path="gender"/>
+<br><br>
+
+
+
+result.jsp:-
+-----------
+
+
+ <% StudentBean s= (StudentBean)request.getAttribute("student"); 
+ 
+ String ar[]=s.getCourses();
+ String c=Arrays.toString(ar);
+ %>
+
+<h2>Roll is <%=s.getName() %></h2>
+<h2>Name is <%=s.getRoll() %></h2>
+<h2>Marks is <%=s.getMarks() %></h2>
+<h2>Courses are <%=c %></h2>
+<h2>Gender is <%=s.getGender() %></h2>
+<h2>Terms is <%=s.isTerms() %></h2>
+
+
+
+
+Select Box validation:-
+---------------------
+
+in StudentBean class:-
+
+
+@NotBlank(message = "must select the city")
+	private String city;
+	
+
+in MyController class:-
+
+
+	@ModelAttribute()
+	public void funx(Model m){
+		
+		String clist[]={};
+m.addAttribute("student", new StudentBean(5, "amit",750,clist,false,"",""));
+	}
+	
+	
+	@RequestMapping(value="/" ,method=RequestMethod.GET)
+	public String homeRequest(Model model){
+	
+		String clist[]={};
+		model.addAttribute("student",new StudentBean(100,"ram", 						850,clist,false,"",""));
+		
+		return "home";
+	}
+
+
+
+in index.jsp:-
+-------------
+
+
+Select City : 
+
+<f:select path="city">
+<f:option value="">Select</f:option>
+<f:option value="Delhi">Delhi</f:option>
+<f:option value="Kolkata">Kolkata</f:option>
+<f:option value="Mumbai">Mumbai</f:option>
+<f:option value="Chennai">Chennai</f:option>
+
+</f:select>
+
+<f:errors path="city"/>
+
 
 
 Custom Validation:-
+===================
+
+we can perform custom validation 2 ways:-
+
+1.by creating custom validation anno 
+
+2.by creating a class to implement Validator api.
+
+
+ex1:-By Creating custom Validation anno:-
+-----------------------------------------
+
+suppose for StudentBean class we want to apply a validation on roll number that roll should not be less than 100:-
+
+
+public class StudentBean implments Serializable{
+
+
+@RollValid
+private int roll;
+
+
+}
+
+
+--lets create the custom anno @RollValid with desired requirement.
+
+
+create a annotation class by selecting it from eclipse wizard.
+
+RollValid.java:-
+---------------
+
+
+@Documented
+@Constraint(validatedBy = RollNumberValidator.class)
+@Target( { ElementType.METHOD, ElementType.FIELD })
+@Retention(RetentionPolicy.RUNTIME)
+
+public @interface RollValid {
+	
+	String message() default "Invalid Roll number";
+    	Class[] groups() default {};
+    	Class[] payload() default {};
+
+}
+
+
+--create RollNumberValidator.java class by Implementing ConstraintValidator<RollValid, Integer> //here first arg is our custom anno name and second argument is the type of field on which this anno is applied.
+
+
+ex:-
+
+RollNumberValidator.java:-
+--------------------------
+
+
+public class RollNumberValidator implements ConstraintValidator<RollValid, Integer>{
+
+	@Override
+	public boolean isValid(Integer i, ConstraintValidatorContext ctx) {
+		
+		if(i<100)
+			return false;
+		
+			else
+		return true;
+	}	
+}
+
+
+2.By creating a class to implement Validator api.
+=================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
