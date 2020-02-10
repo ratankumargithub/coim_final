@@ -140,6 +140,21 @@ Note:- if we don't use the @ModelAttribute inside the parameter,now if control i
 Form page validation:-
 ======================
 
+
+org.sf.validation.Errors(I)
+		|
+		|--extends
+		|
+org.sf.validation.BindingResults(I)
+		|
+		|--implements
+		|
+org.sf.validation.BindException(C)
+
+
+
+
+
 --we need to validate a form in JS as well as in server side programming, when a valid value will come form the client,then only SL method should be called by the controller.
 
 
