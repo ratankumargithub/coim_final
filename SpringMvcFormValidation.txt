@@ -895,6 +895,7 @@ we need to create a class (Spring bean)by implementing Validator interface.
 
 --this class need to be annotated with @Component
 
+--in this class we can define validation logic for any feild of form backing obj.
 
 
 ex:-
@@ -1005,7 +1006,7 @@ writing validation errors msg with the help of properties files:-
 ----------------------------------------------------------------
 
 
-step1:- develop a properties file under WEB-INF folder called "messages.properties".
+step1:- develop a properties file under WEB-INF/resources folder called "messages.properties".
 
 with some error code as a key  and corresponding msg as value.
 
@@ -1027,7 +1028,7 @@ ex:-
 			
 			ReloadableResourceBundleMessageSource rb=new 						ReloadableResourceBundleMessageSource();
 			
-			rb.setBasename("/WEB-INF/messages");
+			rb.setBasename("/WEB-INF/resources/messages");
 			
 			return rb;		
 	}
@@ -1084,6 +1085,394 @@ err.rejectValue("name","name.required",new Object[] {"hello","welcome"},"deault 
 	}
 
 
+
+
+Property Editor:-
+===============
+
+
+---in spring we use setter or constructor injection to assign values to bean properties.in spring cfg file we cfg these dependent values as string value,but they will be converted into int,long,float,double,Date,etc..for this spring internally uses pre-defined PropertyEditors to convert String values to appropriate values
+
+
+
+
+
+--"java.beans.PropertyEditor" is an interface from java beans api. comes along with JDK.
+
+
+--this interface has various methods among them follwing 4 r methods r most usefull method:-
+
+
+1.public void setValue(Object value)
+
+2.public Object getValue()
+
+3.public String getAsText()
+
+4.public void setAsText(String text) throws IllegalArgumentException
+
+
+--this PropertyEditor interface has one implemented Adaptor class is there i.e "PropertyEditorSupport"
+
+--generally we extends that class and overrirdes getAsText() and setAsText() method in our class.
+
+
+
+
+--setAsText() method converts string repreentation of data into bean feild types(Class type field) .
+
+--getAsText() method converts bean feild type(object type) into string type.
+
+
+
+--Spring framework has some  built-in property editors which r not sufficient for our application requirement.
+
+so we can create our own custom property editor based on our requiements..
+
+
+
+
+--assume we r taking a form page with many input fields among them we have 2 files are like 1.Date and 2.Address .
+
+--here both r the objs.
+
+--here we want to take dob in the form of dd/MM/yyyy form and 
+--Address in the form of "state-city-pin" form from the text field.
+
+--for this form,in the form backing class both entries r the objs.
+
+ex:-
+
+
+class Student{
+
+
+private int roll;
+private String name;
+private int marks;
+private Date dob
+private Address address
+
+
+//setter and getters methods.
+
+
+}
+
+
+class Address{
+
+private String state;
+private String city;
+private String pin;
+
+//setters and getters
+
+
+}
+
+
+--in order to map these text box data(from form page) into the corresponding obj of our Form backing class.we need to take suport of "PropertyEditorSupport" class
+
+
+ex:-
+
+
+index.jsp:- (Form page with validation support)
+-----------
+
+
+
+<h1>Welcome to Spring Mvc</h1>
+
+<f:form action="registerStudent" method="post" modelAttribute="student">
+
+
+Enter Roll :<f:input path="roll"/> <f:errors path="roll"/><br><br>
+
+Enter Name :<f:input path="name"/> <f:errors path="name"/><br><br>
+
+Enter Marks :<f:input path="marks"/> <f:errors path="marks"/><br><br>
+
+Enter Address :<f:input path="address" placeholder="state-city-pin" /> <f:errors path="address"/> 
+
+Enter DOB :<f:input path="dob"  /> <f:errors path="dob"/> 
+
+
+<input type="submit" value="Register">
+
+
+</f:form>
+
+
+
+--form backing class for above form is :-
+---------------------------------------
+
+
+
+public class StudentBean implements Serializable{
+
+	@Min(value = 100,message = "roll should be more than 100")
+	private int roll;
+	
+	@NotEmpty(message = "name is mandatory...")
+	private String name;
+
+	private int marks;
+
+	@Past	
+	private Date dob;
+	
+	private Address address;
+
+//getters and setters..
+
+
+}
+
+
+--for the above class we applied 3 field validation with anno support(roll,name,dob) and for (dob,address) we will apply the validation through custom validator.
+
+
+
+custom validation for dob and address field:-
+--------------------------------------------
+
+StudentValidator.java:-
+----------------------
+
+
+
+@Component
+public class StudentValidator implements Validator {
+
+	@Override
+	public boolean supports(Class c) {
+		// TODO Auto-generated method stub
+		return StudentBean.class.isAssignableFrom(c);
+	}
+
+	@Override
+	public void validate(Object obj, Errors err) {
+		
+		StudentBean s=(StudentBean)obj;
+		
+		System.out.println("s is "+s);
+		
+		Address addr = s.getAddress();
+		
+		
+		if(addr == null ) {
+			err.rejectValue("address", "","Address is mandatory and in proper format...");
+		}
+		
+		if(s.getDob() == null) {
+		     
+			err.rejectValue("dob", "","Date is mandatory and should be in properformat.");
+		}
+				
+	}
+
+}
+
+
+
+lets develop custom property editor for dob and address property of StudentBean class to map form field value to the appropriate obj.
+
+
+for dob:-
+
+
+DatePropertyEditor.java:-
+------------------------
+
+
+public class DatePropertyEditor extends PropertyEditorSupport{
+
+	private String enteredDate="";
+		
+	@Override
+	public void setAsText(String text) throws IllegalArgumentException {
+	
+				SimpleDateFormat sdf=new SimpleDateFormat("dd/MM/yy");
+				
+			Date date=null;
+			
+			try {
+				date=sdf.parse(text);
+				
+				this.setValue(date);
+				
+			} catch (ParseException e) {
+				enteredDate=text;
+				this.setValue(date);
+			}
+}
+	@Override
+	public String getAsText() {
+	
+		String s=enteredDate;//hold the entered data
+		
+		//if invalid date is there then it will reuten null ,reffer above method catch block
+		Object o=getValue();
+			
+		if(o != null) {
+		
+		Date d=(Date)o;
+		
+		SimpleDateFormat sdf=new SimpleDateFormat("dd/MM/yy");
+	
+		 s=sdf.format(d);
+	}
+		return s;
+		
+	}
+}
+
+
+
+
+for address:-
+
+
+AddressPropertyEditor:-
+----------------------
+
+
+public class AddressPropertyEditor extends PropertyEditorSupport {
+
+	private String enteredText="";
+	
+	@Override
+	public void setAsText(String text) throws IllegalArgumentException {
+	
+		String sd[]=text.split("-");
+	
+	
+		if(sd.length == 3 ) {
+		
+		Address addr=new Address(sd[0], sd[1], sd[2]);
+		
+		setValue(addr);
+		}
+		else {
+		//if address not passed properly then it will return null	
+			enteredText=text;
+			setValue(null);
+		}	
+	}
+	
+	@Override
+	public String getAsText() {
+	
+		String result=enteredText;
+		
+		Object obj=this.getValue();
+		
+		if(obj != null) {
+		
+		Address addr= (Address)obj;
+	
+		result=addr.getState()+"-"+addr.getCity()+"-"+addr.getPin();
+		
+		}
+		
+		return result;
+	}	
+}
+
+
+
+--in order to bind or map the input text value to the dob and address property of our form form backing obj i.e StudentBean class we need to use @InitBinder annotated method with "WebDataBinder"  obj as a parameter ex:-
+
+
+	
+	@InitBinder
+	public void bind(WebDataBinder b) {
+		
+		AddressPropertyEditor ape=new AddressPropertyEditor();
+			
+		DatePropertyEditor dpe=new DatePropertyEditor();
+		
+		b.registerCustomEditor(Address.class, "address",ape);
+		b.registerCustomEditor(Date.class, "dob",dpe);
+		
+	}
+
+
+--here in the registerCustomerEditor() method :- the 1st parameter is the class to which we want to map,2nd param is the property name of form backing class and 3rd param is our custom property editor class obj.
+
+
+
+MyController.java:-
+------------------
+
+
+@Controller
+public class MyController {
+	
+
+	
+	@Autowired
+	StudentValidator val;
+	
+		
+	@InitBinder
+	public void bind(WebDataBinder b) {
+		
+		AddressPropertyEditor ape=new AddressPropertyEditor();
+		
+		SimpleDateFormat sdf=new SimpleDateFormat("dd-MM-yyyy");
+		
+		DatePropertyEditor dpe=new DatePropertyEditor();
+		
+		b.registerCustomEditor(Address.class, "address",ape);
+		b.registerCustomEditor(Date.class, "dob",dpe);
+		
+	}
+	
+	
+	@RequestMapping(value="/" ,method=RequestMethod.GET)
+	public String homeRequest(Model model){
+	
+		//setting the initial value to the form
+
+		Address addr=new Address("bihar", "patna", "78785");
+		
+		model.addAttribute("student", new StudentBean(100,"Ram",500,addr,new Date()));
+		
+		return "home";
+	}
+	
+	
+	
+	@RequestMapping(value="registerStudent")
+public ModelAndView registerStudent(@Valid @ModelAttribute("student") StudentBean s,BindingResult br){
+	
+		ModelAndView mv=new ModelAndView();
+		
+		val.validate(s, br);
+		
+		
+		if(br.hasErrors()){
+			
+			System.out.println(br.getAllErrors());
+			
+			mv.setViewName("home");
+			return mv;
+		}
+		else{
+		
+		mv.setViewName("result");
+		
+		return mv;
+		
+		}
+	}
+	
+}
+	
 
 
 
