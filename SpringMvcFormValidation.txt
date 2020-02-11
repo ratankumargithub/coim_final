@@ -1476,10 +1476,56 @@ public ModelAndView registerStudent(@Valid @ModelAttribute("student") StudentBea
 
 
 
+Note:- to avoid 0 as a initial from the form page either we need to use Integer class or we need to use custom property editor file ex:-
+
+
+CustomMarksEditor.java:-
+-----------------------
+
+
+public class CustomMarksEditor extends PropertyEditorSupport {
+	
+	private String enteredText="";
+	
+	@Override
+	public void setAsText(String text) throws IllegalArgumentException {
+	
+		if(text.equals("") || text == null ) {
+			this.setValue(0);
+		}
+		else
+			setValue(new Integer(text));
+	
+	}
+	
+	@Override
+	public String getAsText() {
+	
+		
+		int i= (Integer)getValue();
+		
+		if(i == 0) {
+			return "";
+		}else {
+		
+		return i+"";
+		}
+	}
+
+}
 
 
 
+in Controller class:-
+--------------------
 
+
+@InitBinder
+	public void bind(WebDataBinder b) {
+			
+		b.registerCustomEditor(Integer.class,"marks" ,new CustomMarksEditor());
+		
+	}
 
 
 

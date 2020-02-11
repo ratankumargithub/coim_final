@@ -1,0 +1,738 @@
+annotations can be applied on
+
+class/interface ---class level annotaion
+varaible ---variable level annotaitons
+methods---method level annotation
+constructors--constructor level annotations
+
+
+
+
+--from spring 2.5 onwards we can configure spring dependencies  using  annotations.
+
+--spring supplies verious types of annotaions in its all modules to simplyfy the spring application developments:-
+
+
+
+
+Core Module Annotaions:-
+========================
+
+
+1.stereotype annotations
+
+2.Autowiring annotations
+
+3.miscelleneous annotations
+
+
+
+
+
+
+
+
+
+1.stereotype annotation:-
+------------------------
+
+--stereotype is a special type annotations which indicates 'role of a class' in project.
+
+***stereotype annotations r the class level annotations.
+
+
+we have 4 stereotype annotaions:-
+
+a.@Component
+
+b.@Service
+
+c.@Repository
+
+d.@Controller
+
+
+
+
+--@Component is the base annotation for remaining 3.
+
+
+		@Component
+		     |
+---------------------------------------------------------------	
+    |			     |			     |
+@Service		@Repository		@Controller
+
+
+
+
+
+--@Service indicates that this class is a service level class,it means this class contains business logic.
+
+
+--@Repository indicates that this class is a DAO layer class,it means this class contains 
+data -access/persistence logic.
+
+
+--@Controller indicates that this class is a controller bean of a Spring MVC.
+
+
+
+component autoscanning:-
+-----------------------
+
+***Spring has provided an excellent feature called 'component autoscanning'.in this feature,spring container enters into a package and it will search for that package and all of its subpackages for the beans and registers them automatically.
+
+ 
+
+--***in this component autoscanning spring container identifies the class as a bean if a stereotype annotaion is present on the top of the class.
+
+
+--to enable component scanning,in xml file we need to configure :-
+
+<context:component-scan base-package="package name" />
+
+
+
+--with component scanning feature configuration burden is reduced on developers.
+
+
+--***in component scanning spring container register a class as a bean,with class name starting with small latter as its id.
+
+--so if the class name is AccountDao then its id will be accountDao.
+
+
+Note:- if we want to tell the container that register a bean with given id then we need to pass 'value' element to the stereotype annotaion.
+
+ex:-
+
+
+@Component(value="dao")
+class AccountDao{
+
+
+}
+
+
+
+
+
+ex:1-
+
+
+
+package com.ratan;
+@Service
+public class EmpService
+{
+--
+--
+}
+
+
+package com.ratan.dao;
+@Repository
+public class EmpDao
+{
+--
+--
+}
+
+
+in configuration:-
+-------------------
+
+<context:component-scan base-package="com.ratan" />
+
+
+--with the above configuration,spring container registers two beans with ids empService and empDao.
+
+
+
+
+ex2:-
+
+
+package com.ratan;
+@Service
+public class EmpService1
+{
+--
+--
+}
+
+
+package com.ratan.dao;
+public class EmpDao
+{
+--
+--
+}
+
+
+package org.ratan;
+@Service
+public class EmpService2
+{
+--
+--
+}
+
+
+in configuration:-
+-------------------
+
+<context:component-scan base-package="com.ratan" />
+
+
+--in the above configuration spring container register only a EmpService1 class as a bean withid 'empService1'
+
+
+--second class EmpDao will not registered becoz @Service annotation(streotype annotation) is missing.
+
+
+
+
+
+
+
+
+2.Autowiring Annotaions:-
+--------------------------
+
+
+--there r 2 autowiring annotaions:-
+
+a.@Autowired
+
+b.@Qualifier
+
+
+
+
+--we can apply @Autowired annotation on 'field','setter()' and 'constructor' of a bean.
+
+
+--if we apply @Autowired on field then no need to explicitly define its setter(),at runtime spring container explicitly defines its setter.
+
+
+--if we apply @Autowired on the top of reff-field then the container will search for bean id matching with property name(search byName),if found then injects the obj by calling setter(),if not found then container will search for a bean class matching with property type(search byType).
+
+
+
+--if bean id or bean class both r not matched then exception will be thrown bcoz when we add @Autowired annotation then by default that dependency is mandatory.
+
+
+
+ex1:-
+
+@Component
+public class A
+{
+
+@Autowired
+private B b1;
+--
+--
+
+}
+
+
+public class B 
+{
+--
+--
+}
+
+
+in xml file:-
+-------------
+
+
+<conrtext:component-scan base-package="p1"/>
+
+
+--in the above component scan,container configures A,but not B,becoz there is no stereotype annotaion is applied on B class.there container throws exception becoz dependency is not found.
+
+
+--to tell the container that dependency is optional we need to pass 'required' element to @Autowired annotation with 'false' value.
+
+ex:-
+
+@Autowired(required=false)
+private B b1; 
+
+
+
+
+--sometime ambiguity occurs,when same dependency bean class is configured more than once:-
+
+ex:-
+
+@Service
+public class A
+{
+
+@Autowired
+private B b1;
+--
+--
+}
+
+
+@Service
+public class B
+{
+--
+--
+}
+
+
+in xml file:-
+-------------
+
+
+<context:component-scan base-package="p1" />
+
+<bean id="bId" class="p1.B" />
+
+
+--here B class is configured for twice with ids 'b' and 'bId'.
+
+
+
+--when we apply @Autowired annotations,the container will search for bean id matching with property name,if not matched then search for bean class matching with a property type.
+
+
+--in the above ex- bean class B matched for twice,so there is a ambiguity and hence exception is thrown.
+
+
+--we can solve this ambiguity problem by passing id of a bean explicitly by using @Qualifier annotation.
+
+
+ex:-
+
+@Autowired
+@Qualifier("bId")
+private B b1;
+
+
+
+
+
+
+@Autowire on setter method:-
+===========================
+
+
+--if we want that container will inject the dipendency using default setter method implicitly created created by container then we should apply @Autowire on the property where as if we want that container inject the dependencies using our own setter method then we can apply @Autowire annotatio on our setter method.
+
+--in our setter method we can eexute extra logics also.
+
+
+--normally a bean property is private and to access the private property directly container has some overhead. compare to access the public setter method.
+
+so @Autowire using public setter gives better performance compare to @Autowire on private property.
+
+
+
+
+
+
+
+
+
+
+
+3.Miscelleneous Annotaions:-
+----------------------------
+
+
+
+
+
+
+a.@Scope:-
+-----------
+
+
+--this annotation identifies scope of a bean.
+
+--bydefualt bean scope is singleton.
+
+
+--in component scanning,since we don't configure a bean explicitly,so to tell the container about bean scope,we write @Scope annotation on the top of the class.
+
+ex:-
+
+package p1;
+@Service 
+@Scope("prototype")
+public class Sample
+{
+--
+--
+}
+
+
+
+
+c.@PostConstruct and @PreDestroy:-
+----------------------------------
+
+--these annotations defines custom init() and destroy() method in spring appl.
+
+
+--in component scanning,since we don't define bean configuraion in xml,so we use these annotations to tell the container about custom init() and destroy() methods.
+
+
+ex:-
+
+
+@Service
+public class Demo
+{
+
+@PostConstruct
+public void setUp()
+{
+//resource allocation logic
+}
+
+@PreDestroy
+public void tearDown()
+{
+//resource de-allocation logic
+}
+}
+
+
+
+
+
+
+d.@Configuration:-
+------------------
+
+--in spring 4.x we can define a configuration class,instead of defining spring xml file.
+
+--to make a class as Configuration class annotate that class with @Configuration annotation.
+
+
+--to start the spring container we need to create an obj of 'AnnotationConfigApplicationContext' class.
+
+
+
+ex:-
+
+@Configuration
+public class AppConfig
+{
+
+--
+--
+
+}
+
+
+
+public class Test
+{
+
+psvm(--)
+{
+
+ApplicationContext ctx=new AnnotationConfigApplicationContext(AppConfig.class);
+--
+--
+}
+}
+
+
+
+--An spring appl can have more than one configuration classes,in this case,we need to create AnnotationConfigApplicationContext class obj by passing Class obj of multiple configuration classes.
+
+
+
+ex:-
+
+
+@Configuration
+public class AppConfig1
+{
+
+--
+--
+
+}
+
+
+@Configuration
+public class AppConfig2
+{
+
+--
+--
+
+}
+
+
+
+
+public class Test
+{
+
+psvm(--)
+{
+
+ApplicationContext ctx=new AnnotationConfigApplicationContext(AppConfig.class,AppConfig2.class);
+--
+--
+}
+}
+
+
+
+
+
+
+e.@ComponentScan:-
+-------------------
+
+--it is a class level annotation.this annotation enables 'component-scan' feature of spring.
+
+
+ex1:-
+
+@Configuration
+@ComponentScan(basePakcages="com.ratan")
+public class AppConfig1
+{
+--
+--
+} 
+
+
+ex2:-
+
+@Configuration
+@ComponentScan(basePakcages={"com.ratan","org.ratan"})
+public class AppConfig2
+{
+--
+--
+} 
+
+
+
+
+
+
+
+
+
+f.@Bean:-
+---------
+
+--it is a method level annotaion.
+
+
+--in configuration class, if we define any methods to create objs of some classes explicitly,to register those objs as beans with spring container,we write @Bean annotation on top of that method.
+
+
+--when we annotate a method with the @Bean annotation inside Configuration class. Whenever container encounters such method, it will execute that method and register the return value as a bean . By default, the bean id will be the same as the method name.
+
+
+
+--spring container register a bean obj with method name as its id.
+
+
+--this @Bean annotation will work only inside the Configuration class
+
+
+ex2:-
+
+
+@Configuration
+public class AppConfig {
+  
+    @Bean
+    public A getA() {
+        return new TransferServiceImpl();
+    }
+}
+      
+
+
+the above code is equalivent to the follwing xml:-
+
+
+<beans>
+    <bean name="getA" class="p1.A"/>
+</beans>
+
+
+
+ex:- registering a obj with bean and calling its method in test class without using component-scan:-
+--------------------------------------------------------------------------------------------------
+
+A.java:-
+--------
+
+public class A {
+
+	public void funA(){
+		System.out.println("inside funA of A");
+	}
+	
+}
+
+
+MyConfig.java:-
+--------------
+
+@Configuration
+public class MyConfig {
+
+	@Bean()
+	public A getA() {
+		return new A();
+	}
+
+}
+
+
+Test.java:-
+-----------
+
+public class Test {
+
+	public static void main(String[] args) {
+		
+		ApplicationContext ctx=new AnnotationConfigApplicationContext(MyConfig.class);
+		
+		A a2=ctx.getBean("getA",A.class);
+		
+		a2.funA();		
+	}
+}
+
+
+
+
+@Value :-
+=========
+
+--this anno is used to inject the value for simple type varaible 
+
+ex:-
+
+
+@Component
+class Test{
+
+@Value("Ram")
+String name;
+
+
+}
+
+
+
+
+--here we can pass the value through properties files as well.
+
+
+
+--in xml based approach by using <context:property-placeholder loaction="a1.properties" />
+
+or 
+
+by using 
+
+<bean class="org.sf.beans.factory.config.PropertyPlaceholderConfigurer">
+
+<property name="location" value="a1.properties">
+
+</bean>
+
+
+
+--in annotation based approach :-
+
+
+we should use @PropertySource anno to location our properties file in @Configuration annotated class
+
+then we need to write a method annotated with @Bean which return PropertyPlaceholderConfigurer obj .
+
+this obj need to be registerd with container on order to resolve the value from the properties file.
+
+
+ex:-
+
+@Bean
+public PropertyPlaceholderConfigurer pc(){
+
+return new  PropertyPlaceholderConfigurer();
+}
+
+
+
+
+Note:- if we r trying to resolve the properties file inside other that @Configuration annotated classes then the above method pc() should not be static. but if we want to resolve the properties file value inside @Configuration annotated class then that method must be static.
+
+
+
+Environemnt class:-
+-------------------
+
+Spring f/w has given a Built-in class(Spring Bean) called "Environment" by using this class we can read the properies file value in easy manner ex:-
+
+--this class has various getter method which takes key of the properties file and returns the value of properties file.
+
+ex:-
+
+
+@Configuration
+@ComponentScan(--)
+@PropertySource("a1.properties")
+public class AppConfig{
+
+@Autowired
+Environment env;
+
+
+@Bean
+public static PropertyPlaceholderConfigurer pc(){
+
+return new  PropertyPlaceholderConfigurer();
+}
+
+
+
+@Bean
+public DriverManagerDataSource dmds(){
+
+sop(env.getProperties("dname"));
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

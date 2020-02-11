@@ -1,5 +1,16 @@
+--to avoid initail 0 from form page,either we need to use Integer instead of int or we need to work with property editor reffer SpringMvcFormValidation.txt file.
+
+
+
+
+
+
+
+
 Spring Web MVC:-
 ================
+
+
 
 
 what is mvc and mvc2 and what r the rules of mvc-2 design patter,what is a frontcontroller already we disscussed at the time of servlet and jsp reffer jeefw_final notes last part.

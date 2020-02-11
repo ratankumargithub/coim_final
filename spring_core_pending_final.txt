@@ -1,0 +1,2566 @@
+1./
+
+
+
+1.setter injection:-container calls setXXX(-) method to inject dependent values.
+
+2.constructor injection:-container uses parameterized const to create bean class obj by injecting dependent values.
+
+
+============
+Note:-the value we r writing in "name" attribute of <property> tag is not the spring property name,it is actually xxx name of setXXX() method which is designed for setter injection. 
+
+============
+
+=================
+note:- the value we r passing in the name attribute of <constructor-arg> tag is not the bean property name ,it is the constructor parameter name.
+
+=================
+
+
+
+overloaded constructor cfg problem:-
+==================================
+
+
+package p1;
+
+public class AppTest {
+
+	String name,address;
+	int roll;
+	
+	
+	public AppTest(int roll,String name) {
+		this.name=name;
+		this.roll=roll;
+	}
+	
+	public AppTest(String name,String address) {
+		this.name=name;
+		this.address=address;
+	}
+	
+	public void show(){
+		
+		System.out.println("Roll is :"+roll);
+		System.out.println("Name is :"+name);
+		System.out.println("Address is :"+address);
+	}
+		
+	public static void main(String[] args) {
+		
+	
+		ApplicationContext ctx=new ClassPathXmlApplicationContext("beans.xml");
+		
+		AppTest at=ctx.getBean("at",AppTest.class);
+		
+		at.show();
+		
+	}
+
+}
+
+
+beans.xml:-
+----------
+
+<beans ....>
+
+<bean id="at" class="p1.AppTest">
+     
+     <constructor-arg value="500" />
+     <constructor-arg value="Ram" />
+     
+     </bean>
+        
+</beans>
+
+
+
+--in the above app 2nd const will be called and if we delete the 2nd const then the 1st const will be called...to solve the above problem we need to use either index or name property.
+
+
+
+
+
+
+
+
+
+
+
+
+
+2./
+
+
+
+
+***Circular Dependency:-
+-------------------------
+
+
+--suppose we have 2 beans A and B where A depends on B and B depends on A,and in both A and B construtors r defined for injecting the dependency then circular dependency problem occurs.
+
+
+--suppose A depends on B and there is a constructor injection so spring container 1st creates dependency obj and then creates dependent obj.and if B depends on A and there is a constructor injection so spring container 1st creates its dependency.
+
+--so A will be waiting for B obj and B is waiting for A obj finally spring container throws BeanInCreationException.
+
+--inorder to solve this circular dependency problem atleast one side we need to change the dependency injection type from constructor to the setter.
+
+eg:- if we change the dependency injection type in class B from constructor to setter then the obj r created and injected.
+
+
+Diff bt constructor and setter injection:-
+-----------------------------------------
+
+
+
+	constructor					setter
+
+1.it does not solve circular dependency			1.it will solve that.
+problem
+
+2.if dependencies r mandatory then define		2.if dependencies r optional then define setter
+constructor in dependent class				  in dependent class.
+
+3.if dependency is 'final' variable then 		3.'final' dependency can not be injected with
+it must be injected through constructor				setter injection
+
+
+4.if we want to make the dependencies as 		4.if dependencies as mutable then define setter 
+immutable then define constructor injection			injection
+
+
+5.constructor injected values r accessable		5.setter injected values r not accessable to 
+to setter							constructor
+
+6.constructor injected values does not			6.setter injected values override constructor
+override setter injected values.				injected values.
+
+
+
+
+Note:- constructor can not be called explicitly,so constructor injected values can not be changed by again calling the constructor,so constructor injected values r immutable.
+setter injected values can be changed by again calling setter method explicitly,so setter injected values r mutable.
+
+
+
+***Bean configuration witout id:-
+---------------------------------
+
+Note:- we can configure a spring bean class without an id also,here container will generates a default id with following notation:-
+
+<pkg>.<beanclass>#n
+
+#n-->0,1,2///
+
+
+ex-
+
+<bean class="com.ratan.Flipkart">//here bean id will be "com.ratan.Flipkart#0" and in Spring4 
+ ---							//it will be com.ratan.Flipkart only
+</bean>
+
+
+<bean class="com.ratan.Flipkart">//here bean id will be "com.ratan.Flipkart#1"
+ ---
+</bean>
+
+
+
+
+3./-
+
+Collection Dependency:-
+=======================
+
+
+
+
+--A bean can have 3 types of dependencies:-
+
+
+1.simple value type dependency(primitive data types,String)
+
+2.Object type dependency
+
+3.collection type(normal arrays,List,Set,Map,Properties...)
+
+
+ex:-
+
+
+public class Demo
+{
+
+private int k;-----------value type
+private Test test;-------Object type
+private List theList;-----Collection type
+
+}
+
+
+
+--spring f/w provides configuration support for following 4 types of Collection:-
+
+1.java.util.List
+
+2.java.util.Set
+
+3.java.util.Map
+
+4.java.util.properties
+
+5.Normal Arrays
+
+
+1.java.util.List:-
+-------------------
+
+--if  a type of dependency is List or ArrayList or Vector or array([]) then in spring configuration,we need to configure that dependency along with the bean using <list> tag.
+
+--the child tags that can be used under <list> are <value> and <ref> tag.
+
+--if the type of dependency is List or ArrayList then container creates an obj of ArrayList class.
+
+--if the type of dependency is Vector then container creates an obj of Vector class.
+
+--if the type of dependency is array([]) then container creates array obj of that type.
+
+
+
+Note:-***if dependency is of type LinkedList then it can not be configured in xml using <list> tag.
+
+
+ 
+ex:-
+
+public class A
+{
+
+private List theList;
+
+public void setTheList(List theList)
+{
+this.theList=theList;
+}
+}
+
+ 
+
+configuraion:-
+-------------
+
+
+<bean id="a" class="A">
+
+<property name="theList">
+<list>
+
+<value>100</value>1
+<value>Java</value>2
+<value>Rama</value>3
+<ref bean="b" />4
+</list>
+</property>
+</bean>
+
+<bean id="b" class="B" />
+
+
+--for the above code internally Spring container perform:-
+
+A a=new A();
+
+List theList=new ArrayList();
+
+theList.add(100);
+theList.add("java");
+theList.add("Rama");
+
+B b=new B();
+
+theList.add(b);
+
+a.setTheList(theList);
+
+
+
+
+
+ex:-
+
+
+
+
+listbasedinjection
+	|
+	|--Student.java
+	|--Collage.java
+	|--SpringApp.java
+	|--beans.xml
+
+
+
+
+Student.java:-
+-------------
+
+public class Student {
+
+	int roll;
+	String name;
+	
+	public Student(int roll, String name) {
+		super();
+		this.roll = roll;
+		this.name = name;
+	}
+	
+	
+	public void displayStudentDetails(){
+		System.out.println("Roll is :"+roll);
+		System.out.println("Name is :"+name);
+	}	
+}
+
+
+
+
+Collage.java:-
+-------------
+
+
+package p1;
+
+import java.util.List;
+
+public class Collage {
+
+	String name;
+	
+	List<Student> students;
+	
+	public Collage(String name) {
+
+		this.name=name;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public List<Student> getStudents() {
+		return students;
+	}
+
+	public void setStudents(List<Student> students) {
+		this.students = students;
+	}	
+}
+
+
+
+
+beans.xml:-
+----------
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+<bean id="s1" class="p1.Student">
+<constructor-arg value="101"/>
+<constructor-arg value="Rama"/>
+</bean>
+
+<bean id="s2" class="p1.Student">
+<constructor-arg value="102"/>
+<constructor-arg value="Hari"/>
+</bean>
+
+<bean id="s3" class="p1.Student">
+<constructor-arg value="103"/>
+<constructor-arg value="Mohan"/>
+</bean>
+
+
+<bean id="c" class="p1.Collage">
+<constructor-arg value="NIT"/>
+<property name="students">
+<list>
+<ref bean="s1"/>
+<ref bean="s2"/>
+<ref bean="s3"/>
+</list>
+</property>
+</bean>
+
+</beans>
+
+
+SpringAppl.java:-
+----------------
+
+
+package p1;
+
+import java.util.List;
+
+import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+
+public class SpringAppl {
+
+	public static void main(String[] args) {
+		
+		ApplicationContext ctx=new ClassPathXmlApplicationContext("beans.xml");
+		Collage col=(Collage)ctx.getBean("c");
+		
+		List<Student> sts=col.getStudents();
+		
+		for(Student s:sts){
+			s.displayStudentDetails();
+			System.out.println("===================");
+		}
+	}
+
+}
+
+
+
+
+2.java.util.Set:-
+----------------
+
+--if the dependency type is 'Set' or HashSet or LinkedHashSet, then we need to configure in Spring with <set> tag.
+
+--under <set>,we can use <value> and <ref> tag as child tag.
+
+--Spring container creates LinkedHashSet obj internally.
+
+
+Note:- TreeSet can not be configured in Spring configuration file.
+
+
+
+
+ex:-
+
+public class A
+{
+
+private Set theSet;
+
+public void setTheSet(Set theSet)
+{
+this.theSet=theSet;
+}
+}
+
+ 
+
+configuraion:-
+-------------
+
+
+<bean id="a" class="A">
+
+<property name="theSet">
+<set>
+
+<value>100</value>1
+<value>Java</value>2
+<value>Rama</value>3
+<value>100</value>4-----//LinkedHashSet internally removes duplicates values.
+<ref bean="b" />5
+</set>
+</property>
+</bean>
+
+<bean id="b" class="B" />
+
+
+--for the above code internally Spring container perform:-
+
+A a=new A();
+
+Set theSet=new LinkedHashSet();
+
+theSet.add(100);
+theSet.add("java");
+theSet.add("Rama");
+
+B b=new B();
+
+theSet.add(b);
+
+a.setTheSet(theSet);
+
+
+
+
+3.java.util.Map:-
+----------------
+
+--Map is a Collection,which stores data in (key,value) pair,here both key and vlaue r objects.
+
+--we call (key,value) pair as one entry,so Map is a 'collection of entries'.
+
+
+
+
+
+--spring f/w has provided <map> tag to configure a dependency of type:- Map
+HashMap
+LinkedHashMap
+Hashtable
+
+
+--Spring container creates LinkedHashMap obj for the dependency type Map,HashMap,LinkedHashMap
+
+--Spring container creates Hashtable obj for collection type Hashtable.
+
+
+--the child tag of <map> tag is <entry>, with <entry> tag we can use the following combinations of attributes:-
+
+1. key , value
+2. key-ref ,value
+3. key ,value-ref
+4. key-ref ,value-ref
+
+
+
+
+ex:-
+
+
+
+public class A
+{
+
+private Map theMap;
+
+public void setTheMap(Map theMap)
+{
+this.theMap=theMap;
+}
+}
+
+ 
+
+configuraion:-
+-------------
+
+
+<bean id="a" class="A">
+
+<property name="theMap">
+<map>
+
+<entry key="rama" value="sita" />
+
+<entry key-ref="b" value="spring" />
+
+<entry key="10" value-ref="c" />
+
+<entry key-ref="d" value-ref="e" />
+
+</map>
+
+</property>
+</bean>
+
+<bean id="b" class="B" />
+<bean id="c" class="C" />
+<bean id="d" class="D" />
+<bean id="e" class="E" />
+
+
+--for the above code internally Spring container perform:-
+
+A a=new A();
+
+Map theMap=new LinkedHashMap();
+
+
+theMap.put("rama","sita");
+
+B=new B();
+
+theMap.put(b,"spring");
+
+C c=new C();
+
+theMap.put(10,c);
+
+D d=new D();
+E e=new E();
+
+theMap.put(d,e);
+
+a.setTheMap(theMap);
+
+
+
+
+
+4.java.util.Properties:-
+------------------------
+
+--Properties is a subclass of Hashtable and it stores data(key,value) in the form Strings.
+
+--spring f/w provides <props> tag to configure the dependency property
+
+--under <props> tag we configure each key and value with <prop> tag.
+
+ex:-
+
+
+
+
+public class A
+{
+
+private Properties theproperty;
+
+public void setTheProperty(Properties theProperty)
+{
+this.theProperty=theProperty;
+}
+}
+
+ 
+
+configuraion:-
+-------------
+
+
+<bean id="a" class="A">
+
+<property name="theProperty">
+<props>
+
+<prop key="10">rama</prop>
+<prop key="hari">Spring</prop>
+<prop key="DOB">26-dec-1992</prop>
+
+
+</props>
+</property>
+</bean>
+
+
+
+--for the above code internally Spring container perform:-
+
+A a=new A();
+
+
+Properties thePropery=new Properties();
+
+theProperty.setProperty("10","rama");
+theProperty.setProperty("hari","Spring");
+theProperty.setProperty("DOB","26-dec-1992");
+
+a.setTheProperty(theProperty);
+
+
+
+
+
+****Injecting Null:-
+-------------------
+
+
+--we can inject null value to reff type bean property using <null/> tag.
+
+--it is usefull in constructor injection to inject null value to certain reff type parameter when we cannot supply the real value.
+
+ex:-
+
+
+<constructor-arg><null/></constructor-arg>
+
+ex:-
+
+<property name="ll">
+
+<null/>
+
+</property>
+
+
+
+
+
+******
+Bean Autowiring:-
+================
+
+
+----the process of creating associations bt/among application components is known as "wiring". 
+
+--we have two kinds of wiring in spring application:-
+
+1.explicit wiring
+
+2.auto wiring(implicit wiring).
+
+
+--if a spring developer specifies the associations for the dependent bean by using <property> tags and <constructor-arg> tag,it is known as "explicit wiring".
+
+
+--spring container on its own detecting the dependencies implicitly and injecting them into the dependent beans is known as "autowiring".
+
+
+--to instruct the spring container to perform autowiring for a perticular bean we make use of "autowire" attribute of <bean> tag with any one one of the follwing values:-
+
+
+1.no	--this is the default one in xml based cfg
+2.byName
+3.byType     --this is the default in anno based cfg
+4.constructor
+5.default
+
+
+--in bean autowiring,spring container automatically inject a bean dependencies by either calling a constructor or a setter method without writing the configuration in xml file.
+
+
+
+Limitations of bean autowiring:-
+-------------------------------
+
+1.it can be used only to inject objs but not the simple values.
+
+2.If IOC container have multiple dependencies to inject then ambiguity problem may raise.
+
+
+Note--<bean> tag has autowire attribute and its default value is no. it means bydefault autowiring is disabled in xml based autowiring.
+
+where as in annotation based @Autowire the default type is byType.
+
+
+
+
+
+byName:-
+========
+
+
+
+--in this strategy if a beans id/name attribute value in beans.xml file matches with the property name of a dependent bean,spring container implicitly performs the setter injection into the dependent bean.this is known as autowiring byName.
+
+
+
+
+--if unmatched,then spring container does not inject that dependency.it means that property remains with null value.
+
+ex:-
+
+wrt the above Dao example..
+
+	<bean id="con" class="p1.ControllerBean" autowire="byName"/>
+	
+	<bean id="service" class="p1.ServiceBean" autowire="byName"/>
+	
+	<bean id="dao" class="p1.AccountDaoImpl"/>
+	
+
+
+
+byType:-
+========
+
+--in this strategy spring container will search for a bean class in xml that matched with property type.
+
+--if matched then spring container injects the dependency obj by calling setter method of dependent class.
+
+
+
+--if unmatched,then spring container does not inject that dependency.it means that property remains with null value.
+
+
+Note:-this  type of autowire may raise ambiguity error.
+
+--if more than one bean of same type is encountered in the bean configuration file container throws "UnSatisfiedDependencyException" .
+
+
+ex1:- here no need to give same id name as same as variable name.
+
+
+	<bean id="con" class="p1.ControllerBean" autowire="byType"/>
+	
+	<bean id="ser" class="p1.ServiceBean" autowire="byType"/>
+	
+	<bean id="d" class="p1.AccountDaoImpl"/>
+	
+	
+
+ex2:- here exception will occur:-
+
+
+	<bean id="con" class="p1.ControllerBean" autowire="byType"/>
+	
+	<bean id="ser" class="p1.ServiceBean" autowire="byType"/>
+	
+	<bean id="d" class="p1.AccountDaoImpl"/>
+	
+	<bean id="dd" class="p1.AccountDaoImpl"/>
+	
+
+
+
+contructor autowiring:-
+----------------------
+
+
+--in this type of autowiring spring container uses constructor injection instead of setter injection.
+
+--dependency resolution is done by using max number of arguments constructor if constructors r overloaded.
+
+--it first uses byName and if not found then it uses byType,and in case byType if matched with more than 1 then ambiguity exception will be generated..
+
+
+
+--if not matched,then UnsatisfiedDependencyException is thrown and obj will not be crearted.
+
+
+--this kind of autowiring is least preferred becoz of constructor ambiguity.
+
+
+
+A.java:-
+--------
+
+package p1;
+
+public class A {
+
+	public void funA(){
+		System.out.println("inside funA of A");
+	}	
+}
+
+
+
+B.java:-
+--------
+
+package p1;
+
+public class B {
+
+	public void funB(){
+		System.out.println("inside funB of B");
+	}	
+}
+
+
+
+
+AppTest.java
+--------------
+
+
+public class AppTest {
+
+	
+	A a1;
+	B b1;
+	
+	public AppTest() {
+		System.out.println("inside zero argument constr..");
+	}
+	
+	public AppTest(A a1,B b1) {
+		System.out.println("inside (A a1,B b1) argument constr..");
+		this.a1=a1;
+		this.b1=b1;
+	}
+	
+	
+	public void show(){
+		
+		System.out.println("A is "+a1);
+		System.out.println("B1 is "+b1);
+	}
+	
+	
+	
+	
+	public static void main(String[] args) {
+		
+	
+		ApplicationContext ctx=new ClassPathXmlApplicationContext("beans.xml");
+		
+		AppTest at=ctx.getBean("at",AppTest.class);
+		
+		at.show();
+	
+		
+	}
+
+}
+
+
+
+in cfg file:-
+==============
+
+<beans--->
+
+     
+     <bean id="a" class="p1.A"/>
+     
+     <bean id="b4" class="p1.B"/>
+     
+     <bean id="b5" class="p1.B"/>
+     
+     <bean id="at" class="p1.AppTest" autowire="constructor"/>
+     
+     
+</beans>
+
+
+
+
+--if we give id b4 and b5 for class B then it will call zero argument constructor. if we have a constructor 
+
+public AppTest(A a1) {
+
+	System.out.println("inside A a1 argument constr..");
+		
+} 
+
+--then it will be matched..
+
+--if we delete zero() and (A a1) argument constructor then it throws error
+
+
+but if we change any B class id as b1 then 2nd const will be matched and it will be called.
+
+
+
+
+
+
+***Default Autowiring:-
+-----------------------
+
+
+--if multiple beans wants to follow a common autowiring strategy then instead of writing autowire attribute to each <bean> tag we can write 'default-autowire' attribute to <beans> tag.
+
+
+--suppose if any one bean wants to use another autowiring strategy than default autowire strategy then it can override the default value by adding autowire attibute in its own <bean> tag.
+
+
+ex1:-
+
+
+<beans default-autowire="byName" xmlns="-------">
+
+<bean id="a" class="A" />
+<bean id="b" class="B" />
+<bean id="c" class="C" />
+
+</beans>
+
+
+--in the above example A,B,C beans r using autowire strategy "byName".
+
+
+ex2:-
+
+
+<beans default-autowire="byName" xmlns="-------">
+
+<bean id="a" class="A" />
+<bean id="b" class="B" autowire="constructor"/>
+<bean id="c" class="C" />
+
+</beans>
+
+
+--in the above example A,C beans r using autowire strategy "byName" and B uses "constructor" stretegy.
+
+
+
+Note:-
+
+autowire="no" -->disable that autowire mode that enabled through "default-autowire" attribute of <beans> tag.
+
+
+
+Initializing and Disposing a bean :-
+==================================
+
+
+--before a bean object goes to the client,if we want to complete some initialization logic on that bean then spring f/w provide a way to writing the initialization logic inside a custom method and configure that custom method using "init-method" attribute of the <bean> tag.
+
+Note:- that method must be zero argument with void return type.
+
+
+
+ex:-
+
+
+public class EmpBean
+{
+
+
+
+public void setUp()
+{
+//open connection with DB using ds.
+
+}
+}
+
+
+
+
+<bean id="eb" class="EmpBean" init-method="setUp">
+--
+--
+</bean>
+
+
+
+Note:- this init-method will be called by the Spring container after setting the properties.i.e after performing DI.
+
+
+
+Disposing a bean:-
+------------------
+
+
+--Before a bean obj goes out of spring container it is mandatory to release the resources that r holded by the bean obj,otherwise memory-leak problem occurs.
+
+
+
+
+--we can define a custom destroy() method(any name) and configure it in <bean> tag by using 'destroy-method' attribute and write resource release logic in that method.
+
+
+
+Note:- distroy method will be called only when  we close the spring container,then all the beans associated by that container will be released.
+
+ex:- 
+
+
+ApplicationContext ctx=new ClassPathXmlApplicationContext("applicationContext.xml");
+
+here we can not call ctx.close() method.becoz close() method is not available in ApplicationContext class.it is availabe on the ClassPathXmlApplicationContext class.
+
+so by follwing way we can call the close() method.
+
+
+((ClassPathXmlApplicationContext)ctx).close();	
+
+
+
+Q/- how to specify same user-defined initializaton and destruction method for all the beans of the spring application ?
+
+
+A/-
+
+--BY using "default-init-method" and "default-destroy-method" attribute of the <beans> tage we can specify custom initialization and destruction methods for the multiple spring beans.
+
+
+Ex:-
+
+<beans ------- default-init-method="ownInit" default-destroy-method="destroy">
+
+
+
+
+***Lazy Initialization:-
+========================
+
+
+--BeanFactory container bydefault lazy initialize a spring bean.it means container creates obj when a client 1st time requesting for a bean obj.
+
+
+--ApplicationContext container bydefault perform early initialization on spring bean,it means the container creates bean obj while loading the xml file.
+
+
+--if we want to tell ApplicationContext container that lazy initialize a bean then we need to add 'lazy-init' attribute to the <bean> tag.
+
+
+
+--if we use 'lazy-init="true"' in <bean> tag, ApplicationContext does not instantiate the bean unless we call the getBean() method explicitly on the container instance.this is known as lazy initialization.
+
+--However this does not work if it is a dependency for another bean.
+
+--pre-instantiation only work with "singleton-scope" Spring bean.
+
+
+
+
+Singleton java class:-
+---------------------
+
+
+--the class that allows us to create only one obj per jvm is called singleton java class.
+
+
+
+***BeanScope:-
+==============
+
+
+--A scope indicates life span of an obj of a spring bean.
+
+--spring f/w defines 4 scopes for a bean:-
+
+1.singleton(it is a default scope of a spring bean)
+
+2.prototype
+
+3.request
+
+4.session
+
+
+
+
+
+
+--request and session scopes can be used only in web-app(spring mvc module).
+
+--singleton and prototype scopes can be used in both web and non-web(standalone) appl.
+
+
+--singleton:- it returns same bean class obj for all getBean(-) method calls with same bean id.
+
+--prototype:- returns seperate bean class for every getBean(-) method call.
+
+
+
+--if a bean scope is a singleton, then spring container returns 'same' obj for all the client when they r requesting with its 'id'.
+
+--ApplicationContext container of Spring creates and instantiate singleton scope bean obj while loading xml file.
+
+
+--if same bean class is configured with diff id then container creates one more obj for the bean.it means spring container makes a spring bean obj as a singleton with respect to id.
+
+
+
+
+A obj1=(A)ctx.getBean("a1");
+A obj2=(A)ctx.getBean("a1");
+
+A obj3=(A)ctx.getBean("a2");
+
+obj1.hashCode()==obj2.hashCode()-----true
+
+obj1.hashCode()==obj3.hashCode()-----false
+
+
+
+Note:- bean scope="singleton" never makes our bean class as singleton java class,but gives singleton behaviour while creating obj.
+
+
+--if scope of a bean is prototype then spring container creates new obj each time when client request the container by calling getBean(-) method.
+
+
+--if a bean scope is singleton then AC container will instantiate that bean at the time of loading the xml.it is called early loading or pre-instantiating.
+
+--if a bean scope is prototype the AC container will creates obj on req by the client.it is called lazy loading.
+
+
+
+--<bean> tag in xml has 'scope' attribute using this we can specify the scope of a bean obj manually.
+
+
+
+
+
+
+
+
+Bean Life-cycle:-
+-----------------
+
+--in ordinary java class we use constructor,finalize() method to place initialization and uninitialization logics.
+
+
+--Spring container controls life-cycle of spring bean that is from bean instantiation to destruction.
+
+
+--spring bean is a POJO,it need not implement any spring specific api interface or extends any class so as to facilitate the spring container to control its life-cycle.ie for spring bean component contract is not required.
+
+
+--life-cycle of a spring bean has 5 stages:-
+
+1.does not exist
+
+2.instantiated
+
+3.initialized
+
+4.service
+
+5.destroy
+
+
+
+
+--initially a bean object does not exist,if the beans scope is singleton then bean is instantiated by the container at the time of loading xml.
+
+
+--if scope is prototype then it is instantiated at request given by the client(when getBean() method called in Test class)
+
+
+
+
+1.Instantiation phase:-
+----------------------
+
+--spring container loads the spring bean class into the memory and creates the bean class instance.
+
+--when the spring bean instance is created,spring container uses DI to populate the bean feilds.
+
+
+--all the dependecies r resolved for the spring bean before its instantiation finished.
+
+
+
+
+
+2.Initialization Phase:-
+----------------------
+
+
+--in the spring bean class if any custom initialization method is specified,spring container calls that method.in this method we can give any resource to the spring bean.
+
+
+
+
+Note:- unless initialization phase is over,spring container does not give bean reff to the caller.
+
+in case of BeanFactroy,instantiation and initialization happens than only getBean() method is called.
+
+
+
+
+3.Ready to use Phase:-
+--------------------
+
+--when spring container gives the bean reff to the caller,its business method can be called.
+
+
+4.Destruction Phase:-
+--------------------
+
+--Upon container shutdown or any explicit method is called,spring container calls the user defined destroy() method of the spring bean just before the bean instance is garbage collected.
+
+
+
+--in this method,we release the resources allocsted to the bean.
+
+
+
+
+
+
+
+
+
+
+
+Factory method:-
+===============
+
+--the method that is capable of creating either same class obj or diff class obj is called Factroy method.
+
+--their r two types of factory methods r there:-
+
+1.instance factroy method(non-static fm)
+
+ex:-
+
+String s1=new String("hello");
+String s2=s1.concat("123");//hello123 a new obj will be created.
+
+2.static factory method.
+
+Calendar c=Calendar.getInstance();
+
+
+***Note:-we can make IOC container to create spring bean class obj in 4 ways:-
+
+1.using 0-arg constructor
+
+2.using parameterized constructor
+
+3.using instance factroy method(when factory-method and factory-bean attribute placed in <bean> tag)
+
+4.using static factroy method.(when factroy-method attribute placed in <bean> tag)
+
+
+
+***Note:- in spring we can configure abstract class as spring bean using factory method.
+
+
+
+
+
+--we can tell the container that call the factory method for instantiating a bean by adding 'factory-method' attribute in <bean> tag and provide its value as factory method name.
+
+
+--if container calls factory method then it returns an obj to the container and container will register that obj with given id.
+
+
+ex:-
+
+<bean id="s1" class="Sample" factory-method="getSampleObj" /> 
+
+<bean id="s2" class="Sample" factory-method="getSampleObj" /> 
+
+<bean id="s1" class="Sample" factory-method="getSampleObj" scope="prototype"/> 
+
+
+
+ex 2:-
+
+<bean id="a1" class="java.util.Calandar" factory-method="getInstance" />
+
+
+
+Spring Application on creating a bean instance using static factroy method:-
+===========================================================================
+
+
+
+--some java classes can be instantiated only through their static factroy methods..in such case,we should indicate to the spring container about that by using "factory-method" attribute of <bean> tag.
+to this attribute,we need to specify the factory method name as the value.
+
+
+Ex:-
+
+
+factorymethodinstantiation
+	|
+	|--HelloBean.java
+	|--SpringAppl.java
+	|--beans.xml
+
+
+
+
+
+HelloBean.java:-
+--------------
+
+package p1;
+
+public class HelloBean {
+
+	String message;
+
+	public HelloBean(String message) {
+		super();
+		this.message = message;
+	}
+	
+	public static HelloBean getInstance(){
+		System.out.println("in factroy method...");
+	HelloBean hb=new HelloBean("instantiated from static factory method..");
+	return hb;
+	}
+	
+	public void displayMessage(){
+		System.out.println(message);
+	}	
+}
+
+
+
+beans.xml:-
+----------
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+<bean name="hb1" class="p1.HelloBean" factory-method="getInstance"/>
+
+</beans>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static factroy method with argument:-here also we use <constructor-arg> tag.
+-------------------------------------
+
+
+HelloBean.java:-
+---------------
+
+package p1;
+
+public class HelloBean {
+
+	String message;
+
+	public HelloBean() {
+		super();
+		
+	}
+	
+	public static HelloBean getInstance(String name){
+		System.out.println("in factroy method..."+name);
+	HelloBean hb=new HelloBean();
+	return hb;
+	}
+	
+	public void displayMessage(){
+		System.out.println(message);
+	}	
+}
+
+
+
+beans.xml:-
+----------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+<bean name="hb1" class="p1.HelloBean" factory-method="getInstance">
+<constructor-arg value="Rama"/>
+</bean>
+</beans>
+
+
+
+
+injecting instance factory method:-
+----------------------------------
+
+
+instancefactorymethodappl
+	|
+	|--HelloBean.java
+	|--beans.xml
+	|--SpringAppl.java
+
+
+
+
+
+HelloBean.java:-
+---------------
+
+package p1;
+
+public class HelloBean {
+
+	String message;
+
+	public HelloBean(String message) {
+		super();
+		this.message = message;
+	}
+	
+	public  HelloBean getInstance(){
+		System.out.println("in factroy method...");
+	HelloBean hb=new HelloBean("instantiated from static factory method..");
+	return hb;
+	}
+	
+	public void displayMessage(){
+		System.out.println(message);
+	}	
+}
+
+
+
+beans.xml:-
+----------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+<bean name="hb" class="p1.HelloBean">
+<constructor-arg value="hello"/>
+</bean>
+
+<bean name="hb1" class="p1.HelloBean" factory-bean="hb" factory-method="getInstance"/>
+
+</beans>
+
+
+
+
+SpringAppl.java:-
+----------------
+
+package p1;
+
+import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+
+public class SpringAppl {
+
+	public static void main(String[] args) {
+		
+		Resource res=new FileSystemResource("beans.xml");
+		
+		XmlBeanFactory fac=new XmlBeanFactory(res);
+		
+		HelloBean abean=(HelloBean)fac.getBean("hb1");
+		
+		abean.displayMessage();
+		HelloBean abean2=(HelloBean)fac.getBean("hb1");
+
+		abean2.displayMessage();
+		
+	}
+
+}
+
+
+
+Injecting Object obj a class by using static factory method of another class:=
+==============================================================================
+
+
+injecting Connection obj by using DBUtil class static method provideConnection();
+
+
+DBUtil.java:-
+------------
+
+package p4;
+
+import java.sql.Connection;
+
+public class DBUtil {
+
+	private static Connection conn;
+	
+	private DBUtil() {
+		// TODO Auto-generated constructor stub
+	}
+	
+	public static Connection provideConnection(){
+		
+		System.out.println("inside provideConnection ");
+		
+		return null;
+		
+	}	
+}
+
+
+
+ConnTest.java:-
+==============
+
+package p4;
+
+import java.sql.Connection;
+
+public class ConnTest {
+	
+	Connection conn;
+
+	public void setConn(Connection conn) {
+		this.conn = conn;
+	}
+	
+	public void testConn(){
+		System.out.println("testing the connection");
+		System.out.println(conn);
+	}
+}
+
+
+
+applicationContext.xml:-
+=======================
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	 http://www.springframework.org/schema/beans/spring-beans.xsd"
+	  default-init-method="setUp" default-destroy-method="tearDown">
+
+
+
+<bean id="db" class="p4.DBUtil" factory-method="provideConnection"/>
+
+//--here provideConnection() method of DBUtil class will return a Connection obj.not the DBUtil class //obj. so db refference will reffer to the Connection obj,not to the DBUtil class obj.
+
+
+
+<bean id="ct" class="p4.ConnTest">
+<property name="conn" ref="db"/>
+</bean>
+
+
+</beans>
+
+
+
+
+
+Spring Expression Language:-
+===========================
+
+
+--this expression lang of spring is used to set the value of a property of a bean,based on the value of a property of another bean or by calling the method of another bean.
+
+
+
+--the syntax of spring expression language is #{expression}
+
+
+ex:-
+
+
+public class A
+{
+
+priavte int x;
+
+public void setX(int x){
+this.x=x;
+}
+
+public int getX(){
+return x;
+}
+}
+
+
+public class B
+{
+private int y;
+
+public void setY(int y){
+this.y=y;
+}
+}
+
+
+<bean id="a" class="A">
+<property name="x" value="10" />
+</bean>
+
+<bean id="b" class="B">
+
+<property name="y" value="#{a.x * 2}" />------//here a.x will call a.getA() internally.
+</bean>
+
+
+
+Expression lang of spring can set value to property of a bean by calling the method of another bean also.
+
+ex:-
+
+
+public class Song
+{
+
+public String songName(){
+return "DJ wale babu";
+}
+}
+
+
+public class Guitar
+{
+
+private String str;
+
+public void setStr(String str){
+this.str=str;
+}
+}
+
+
+<bean id="s" class="Song" />
+
+<bean id="g" class="Guitar">
+<property name="str" value="#{s.songName().toUpperCase()}" />
+</bean>
+
+
+
+
+Note:- in the above example,if songName() method returns null,then NullPointerException will thrown.
+
+
+--Spring Expression language has given null safe operator[?.] this operator calls right side method if left side method is not null.
+
+ex:-
+
+#{s.songName()?.toUpperCase()}
+
+
+
+--***for calling static methods or static variables of a class,spring expression language has provided 'T' operator.
+
+ex:-
+
+
+public class A
+{
+
+private int x;
+public void setX(int x){
+this.x=x;
+}
+
+}
+
+
+<bean id="a" class="A">
+<property name="x" value="#{T(java.lang.Math).PI}" />
+</bean>
+
+
+
+
+
+
+
+Spring cfg using properties file:-
+=================================
+
+
+
+using place holder in configuration:-
+-------------------------------------
+
+--in spring configuration file instead of directly defining the values to the properties of bean,we can put place holders.
+
+--a place holder is indicated with ${variable}
+
+--before creating an obj of a bean,spring container replaces placeholders with the values by loading from properties file.
+
+
+--properties file is a text file with .properties extension that maintains data in (key=value) format.
+
+--the main adv of properties file is,it is easy to modify than xml file.
+
+--in order to tell the location of properties file to the spring container,
+
+we have 2 ways:-
+
+
+
+1.by uisng <context:property-placeholder> (here we need to import the context-related namespace).
+
+
+2.by configuring "PropertyPlaceholderConfigurer" class as a bean in our xml file.here no need to import the context-related namespace.
+
+
+
+ex1:-
+
+
+AppTest.java:-
+-------------
+
+
+public class AppTest {
+
+	
+	int roll;
+	String name;
+	
+	public void setRoll(int roll) {
+		this.roll = roll;
+	}
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+
+	public void show(){
+		System.out.println("Roll is "+roll);
+		System.out.println("Name is "+name);
+	}
+		
+	public static void main(String[] args) {
+
+		ApplicationContext ctx=new ClassPathXmlApplicationContext("beans.xml");
+		
+		AppTest at=ctx.getBean("at",AppTest.class);
+			
+		at.show();
+		
+	}
+}
+
+
+
+a1.properties:- inside the src folder
+---------------
+
+db.roll=400
+db.name=ramesh
+
+
+beans.xml:-
+-----------
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context
+    	http://www.springframework.org/schema/context/spring-context.xsd">
+
+        
+<bean id="at" class="p1.AppTest">
+
+<property name="roll" value="${db.roll}" />
+<property name="name" value="${db.name}" />
+
+</bean>
+        
+<context:property-placeholder location="a1.properties" />
+                
+</beans>
+
+
+
+
+2nd way :- ex:- by using "PropertyPlaceholderConfigurer" class
+--------------------------------------------------------------
+
+
+AppTest.java and a1.properties as previous app:-
+
+
+beans.xml:-
+-----------
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+
+<bean id="a" class="p1.A">
+
+<property name="x" value="100" />
+<property name="name" value="Ram" />
+
+</bean>
+        
+<bean id="at" class="p1.AppTest">
+
+<property name="roll" value="${db.roll}" />
+<property name="name" value="${db.name}" />
+
+</bean>
+        
+        
+<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+
+	<property name="location" value="a1.properties"/>
+
+</bean>
+        
+
+
+//in case of multiple properties file use "locations" as property name
+
+ex:-
+
+<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+
+	<property name="locations">
+
+		<list>
+
+		  <value>a1.properties</value>
+		  <value>a2.properties</value>
+
+		</list>
+
+	</property>
+
+</bean>
+
+
+        
+</beans>
+
+
+
+--in case a1.properties in ohter location:- use "file:///"
+
+
+<property name="location" value="file:///f:/Config/a1.properties" />
+
+
+
+
+
+
+
+
+Using DataSource obj in Spring appl to use JDBC:-
+================================================
+
+diff bt DriverManager and DataSource:-
+-------------------------------------
+
+***the best practice is,aquairing the connection and releasing the connection in the service method only without compromising the performance and reusability of the connection.
+
+
+***there r two ways to acquire a DB connection in java program:-
+
+1.using DriverManager
+
+2.using DataSource
+
+
+Similarities Bt DriverManager and DataSource
+=============================================
+
+
+1.both belongs to JDBC api.
+
+2.both provides connection to the java application.(java.sql.Connection)
+
+3.both have the getConnection() method to provide the connection.
+
+
+Diff bt DriverManager and DataSource:-
+=====================================
+
+
+	DriverManager			DataSource
+
+1.it is a java class			1.it is a java interface
+
+2.does not provide pooled connection	2.it provides.
+
+3.it can be used in managed and		3.only in managed application. 
+non managed application.
+
+
+4.provides conn,based on DB conn-detail	4.provides connection in logical 
+supplied to it.				  name based manner.
+
+
+
+
+Connection Pooling:-
+==================
+
+--a group of pre-created DB connection kept in cache for use and reuse is known as Connection pool.
+
+
+
+
+Q/- What is a DataSource ?
+
+A/-
+
+--it is an interface.
+
+--jee platform(container) imple this interface.
+
+--Object orientation representation of connection pool is nothing but DataSource obj.
+
+--DataSource obj is a COnnection factory.
+
+--DS obj is registered with NamingService with a user-defined name(logical name).
+
+
+
+
+DataSource in Standalone Appl:-
+===============================
+
+
+***if we want to use want to use DataSource in Standalone appl,we should use 3rd party supplied DS implementaion...
+
+
+
+
+
+note:-
+
+--BasicDataSource is the apache(third party) imple of DataSource.in order to use that we must set the dbcp related jar file in the class  path.
+
+--Spring f/w provide its own imple of DataSource ie. "org.sf.jdbc.datasource.DriverManagerDataSource" class.it create the connection obj in connection pool based on the bean property values configuration.
+
+--in order to use DriverManagerDataSource we must set the jar file for spring-jdbc and spring-tx and DB driver related jar files.
+ex:-
+
+
+beans.xml:-
+----------
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+<property name="location" value="ourdb.properties"/>
+</bean>
+
+
+<bean name="drds" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+
+<property name="driverClassName" value="${driver}"/>
+<property name="url" value="${url}"/>
+<property name="username" value="${user}"/>
+<property name="password" value="${pwd}"/>
+
+</bean>
+
+
+<bean name="acc" class="p1.AccountDAO">
+<constructor-arg ref="drds"/>
+
+</bean>
+
+
+</beans>
+
+
+
+
+externalpropertiesApp
+	|
+	|--ourdb.properties
+	|--beans.xml
+	|--AccountDAO.java
+	|--SpringApplication.java
+
+
+
+
+
+ourdb.properties:-
+----------------
+
+driver=com.mysql.jdbc.Driver
+url=jdbc:mysql://localhost:3306/db1
+user=root
+pwd=root
+
+
+AccountDAO.java:-
+----------------
+
+package p1;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+public class AccountDAO {
+
+	DataSource ds;
+
+	public AccountDAO(DataSource ds) {
+		super();
+		this.ds = ds;
+	}
+	
+	
+	public boolean createAccount(int ano,String nm,int bal){
+		boolean flag=false;
+		
+		try {
+			Connection conn=ds.getConnection();
+			
+			PreparedStatement ps=conn.prepareStatement("insert into account value(?,?,?)");
+			
+			ps.setInt(1, ano);
+			ps.setString(2, nm);
+			ps.setInt(3, bal);
+			int re=ps.executeUpdate();
+			
+			if(re>0)
+				flag=true;
+			ps.close();
+			conn.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		return flag;
+	}	
+}
+
+
+
+beans.xml by using 3rd party DBCP ,BasicDataSource class,here we must set the third party jar file in maven dependency :-
+
+
+1.commons-dbcp-1.4.jar
+
+2.org.apache.commons.pool.jar
+
+
+
+
+beans.xml:-
+----------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+<bean name="d" class="org.apache.commons.dbcp.BasicDataSource">
+
+<property name="driverClassName" value="${driver}"/>
+<property name="url" value="${url}"/>
+<property name="username" value="${user}"/>
+<property name="password" value="${pwd}"/>
+
+</bean>
+
+
+
+<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+<property name="location" value="ourdb.properties"/>
+</bean>
+
+<bean name="acc" class="p1.AccountDAO">
+<constructor-arg ref="d"/>
+
+</bean>
+
+</beans>
+
+
+
+SpringApp.java:-
+---------------
+
+
+package p1;
+
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
+
+public class SpringApp {
+
+	
+	public static void main(String[] args) {
+		
+		FileSystemXmlApplicationContext context=new FileSystemXmlApplicationContext("beans.xml");
+		
+		AccountDAO dao=(AccountDAO)context.getBean("acc");
+		
+		boolean f=dao.createAccount(105, "Ajay", 8000);
+		
+		if(f)
+			System.out.println("Account created");
+		else
+			System.out.println("creation fails...");
+				
+	}
+	
+}
+
+
+
+
+
+Spring I18N:-
+=============
+
+i18n:-
+========
+
+
+--language+country is called as locale
+
+ex:-
+
+en-US
+en-Br
+fr-FR
+hi-IN
+
+
+--making our appl working as multiple locale based client organization is nothing but enabling i18n on appl of our project.
+
+
+--to enable i18n on the project we need to work with multiple properties files for multiple locales.
+one base properties file is mandatory along with multiple locale specific properties file 
+
+--the key of the properties file must be same and values can be either in english or as unnicode number representing letters of various languages.
+
+--to get the unicode number we can use third party tool...from net..
+
+
+
+
+i18nApplication
+	|
+	|--App.properties
+	|--App_fr_CA.properties
+	|--App_hi_IN.properties
+	|--App_de_DE.properties
+	|--beans.xml
+	|--SpringApp.java
+
+
+App.properties:-
+---------------
+
+# english
+
+str1=delete
+str2=save
+str3=stop
+str4=cancel
+
+
+App_fr_CA.properties:-
+---------------------
+
+# french
+
+str1=FRDELETE
+str2=FRSAVE
+str3=FRSTOP
+str4=FRCANCEL
+
+App_de_DE.properties:-
+---------------------
+
+# german
+
+str1=GRDELETE
+str2=GRSAVE
+str3=GRSTOP
+str4=GRCANCEL
+
+
+
+App_hi_IN.properties:-
+---------------------
+
+# hindi
+
+str1=dilit {0} {1}
+str2=surakhshit
+str3=rokko
+str4=radd
+
+
+beans.xml:-
+----------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+
+<property name="basename" value="App">
+
+</property>
+</bean>
+
+
+</beans>
+
+
+
+
+SpringApp.java:-
+---------------
+
+package p1;
+
+import java.util.Date;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
+
+public class SpringApp {
+
+	public static void main(String[] args) {
+
+	ApplicationContext ac=new FileSystemXmlApplicationContext("applicationContext.xml");
+	
+	
+	Locale l=new Locale("fr", "CA");
+	
+	String msg=ac.getMessage("str1", null,"Defult msg 1",l);
+	/*		
+	str1--is the key of the properties file..
+	null--it is the Object[] that will pass as array of object to the properties file to the 	expression{0}..
+	default msg---if key is not available...	
+	l--locale instance..	
+	*/
+	
+	System.out.println(msg);
+	
+	
+	}
+
+}
+
+
+
+
+Bean Dependency Check:-
+======================
+
+--it is removed from Spring 3.x
+
+Q/- what is dependency checking in a spring application ?
+
+
+A/-
+
+--Dependency checking is a feature offered by spring container to check whether all properties of a spring bean r set or not.
+
+
+***Dependency checking works only for setter injection.becoz for constructor injection if any param values is missing,it will raise an error.
+
+--A <bean> tag has "dependency-check" attribute that can take one of the following values:-
+
+1.none
+
+2.simple
+
+3.objects
+
+4.all
+
+
+--by defult "none" is applied.it means spring container does not check whether all the properties r configured in beans.xml or not.
+
+
+
+"simple"--varification for primitives,String and Collections
+
+"object"--varifictaion is made only for user defined variables(reff and instance variable).
+
+"all"---combination of simple and object type.
+
+
+Note:- if we apply the "dependency-check" attribute and if any dependency is missing it will raise "UnsatisfiedDependencyException"...
+
+
+
+ex:-
+
+<bean id="id1" class="p1.A"/>
+
+<bean id="id2" class="p1.B" dependency-check="all">
+
+<property name="sno" value="1000"/>
+
+<property name="aobj" ref="id1"/>
+
+</bean>
+
+Q/- how to change "dependency-check" default value of the all spring beans ?
+
+
+A/-
+
+--to change the default nature of all the beans of beans.xml of "dependency-check" we use 
+"default-dependency-check" attribute of <beans> tag.
+
+
+
+Note:- dependency-check is removed from spring 3.x becoz it allows to apply restriction on group of properties not on specified properties,as an alternate @Required annotation is given.
+
+
+
+
+Interface Injection:-
+=====================
+
+
+--if we perform dependency lookup in regular fashion like creating container obj and call the getBean() method in target class(other than main class),we need to create one more container in target class,so instead of creating a seperate IOC container in target class method we ask IOC container(already created in main class) to inject it reff to the target class,and we use that reff in targrt class to get the dependent value.
+
+
+--here underlaying container is injecting its reff only when target class is implementing "xxxAware" interface.so it is called Aware injection or interface injection.
+
+
+
+
+===========
+
+
+--in this type of injection,spring container calls an interface given method for injecting its dependency.
+
+--interface injection is not a general purpose DI.it is used only in 3 cases:-
+
+1.for injecting a bean 'id' or 'name'
+
+2.for injecting BeanFactory
+
+3.for injecting ApplicationContext
+
+
+
+
+
+BeanNameAware:- it is injecting the bean name/id by which name/id that bean is configured. it is useful
+---------------
+
+in some situation like assume, same bean is configured multiple times with diff name then if in some bean has any problem then by watching the log file we can gets the information which bean is giving problem.
+
+
+
+
+
+injecting ApplicationContext:-
+--------------------------------
+
+--spring container calls setApplicationContext(-) method of 'o.sf.context.ApplicationContextAware' (I) interface for injecting ApplicationContext obj.
+
+
+ex:-
+
+
+
+Engine.java:-
+------------
+
+package p1;
+
+public class Engine {
+
+	public void start(){
+		System.out.println("Engine Staarted...");
+	}	
+}
+
+
+
+Vehicle.java:-
+--------------
+
+
+public class Vehicle implements ApplicationContextAware {
+
+	private ApplicationContext ctx;
+
+	
+
+	@Override
+	public void setApplicationContext(ApplicationContext ctx)
+			throws BeansException {
+		this.ctx=ctx;
+		
+	}
+	
+	public void move(){
+		
+	Engine e=ctx.getBean("eng",Engine.class);
+	
+	e.start();
+	
+	System.out.println("Vehicle Moved....");
+	
+	}
+}
+
+
+
+beans.xml:-
+----------
+
+
+<beans ...>
+
+	<bean id="eng" class="p1.Engine"/>
+        
+        <bean id="v" class="p1.Vehicle"/>
+
+</beans>
+
+
+
+AppTest.java:-
+--------------
+
+
+
+public class AppTest {
+
+	public static void main(String[] args) {
+
+		ApplicationContext ac=new ClassPathXmlApplicationContext("beans.xml");
+		
+		Vehicle v=ac.getBean("v",Vehicle.class);
+		
+		v.move();
+		
+		}		
+	}
+
+
+
+
+
+
+
