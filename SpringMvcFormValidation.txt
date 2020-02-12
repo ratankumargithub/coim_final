@@ -108,7 +108,7 @@ Note:- in order to validate our form field we need to apply validation annotaito
 
 --now if any error will occur we need to redirect the user to the same form page with the snapshot value of that form page as a Model attribute.
 
---this time we need to override the previous Model attribute "student"(which has the initial value) with the another student obj with the snapshot value.
+--this time we need to override the previous Model attribute "student"(which has the initial value) with the another student obj with the snapshot value of Bean class and the BindingResult obj.
 
 --we override that initail Model attribute student by taking @ModelAttribute annotation inside the request handling method parameter
 
@@ -116,6 +116,17 @@ ex:-
 
 @RequestMapping(value="registerStudent")
 	public String registerStudent(@Valid @ModelAttribute("student")StudentBean s,BindingResult br){
+
+
+//****Note:- BindingResult must come after model obj otherwise it gives a error.
+//here form page submitted data will be binded to the supplied StudentBean obj and that obj will be //added to the Model obj with key "student" this StudentBean obj will be validated with @Valid //annoation and if any errors r there then they will be added to the BindingResult obj..and if any //error occurs we need to forcord the control to the index.jsp page again with Model obj(which has the //studentBean obj with snapshot value) and the BindingResult obj which the validation errors.
+//this BindingResult has the reff of Validated StudentBean obj due to which error is occured.
+//form filed will be populted with the StudentBean obj data prsent in Model obj and by hte help of //<form:errors> tag we display the error msg from BindingResult obj.
+
+
+
+
+
 
 
 if(br.hasErrors){
@@ -132,9 +143,9 @@ return "sucess";
 }
 
 
-Note:- if we don't use the @ModelAttribute inside the parameter,now if control is redirected to index page(form page) again,then it will load again previous student obj from Model with initail and not validated value.if we have written @ModelAttribute annotated method,otherwise it will generate error.
+Note:- if we don't use the @ModelAttribute inside the parameter,now if control is redirected to index page(form page) again,then it will load again previous student obj from Model obj.if we have written @ModelAttribute annotated method,otherwise it will generate error.
 
---but if we use @ModelAttribute inside parameter then the old initial value from the Model will be updated with the form page Snapshot value and with validated value.
+--but if we use @ModelAttribute inside parameter then the old initial value from the Model will be updated with the form page Snapshot value.
 
 
 Form page validation:-
